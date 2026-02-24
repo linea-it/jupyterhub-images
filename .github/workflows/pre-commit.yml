@@ -6,8 +6,6 @@ on:
 jobs:
   pre-commit:
     runs-on: ubuntu-latest
-    # continue-on-error: true   # 👈 não bloqueia o PR
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
