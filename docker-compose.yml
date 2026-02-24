@@ -1,0 +1,24 @@
+services:
+  jupyter:
+    # image: quay.io/jupyter/datascience-notebook:2026-02-09
+    build:
+      context: .
+      dockerfile: general/Dockerfile
+    ports:
+      - "8888:8888"
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - GRANT_SUDO=yes
+    volumes:
+      - ./work:/home/jovyan/work
+
+# services:
+#   jupyter:
+#     image: docker.io/linea/jupyter-general:2fc34ab
+#     ports:
+#       - "8888:8888"
+#     environment:
+#       - JUPYTER_ENABLE_LAB=yes
+#       - GRANT_SUDO=yes
+#     volumes:
+#       - ./work:/home/jovyan/work
