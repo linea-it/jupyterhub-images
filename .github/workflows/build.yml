@@ -15,8 +15,8 @@ jobs:
         image:
           - name: datascience
             context: datascience
-          # - name: solarsystem
-          #   context: solarsystem
+          - name: solarsystem
+            context: solarsystem
 
     env:
       DOCKERHUB_ORG: linea
