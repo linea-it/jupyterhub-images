@@ -9,10 +9,17 @@ RUN conda config --add channels conda-forge && \
 
 RUN apt-get update --yes && \
     apt-get install --yes --no-install-recommends \
-    ca-certificates \
     wget \
     gnupg \
-    gcc \
+    ca-certificates \
+    libcfitsio-dev \
+    wcslib-dev \
+    liberfa-dev \
+    libchealpix-dev \
+    libhealpix-cxx-dev \
+    libopenblas-dev \
+    liblapack-dev \
+    gcc && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Postgresql client
@@ -47,9 +54,52 @@ RUN mamba install -y \
     # Database Access & Querying
     psycopg[c] \
     SQLAlchemy \
+    # --- Data Science ---
+    numpy \
+    scipy \
+    pandas \
+    matplotlib \
+    seaborn \
+    scikit-image \
+    scikit-learn \
+    dask \
+    # --- Astronomia ---
+    astropy \
+    astroquery \
+    healpy \
+    photutils \
+    regions \
+    reproject \
+    hats \
+    hats-import \
+    lsdb \
+    pyvo \
+    sbpy \
+    ipyaladin \
+    dustmaps \
+    specutils \
+    pyspeckit \
+    spiceypy \
+    cartopy \
+    # --- Interactive Visualization ---
+    bokeh \
+    holoviews \
+    hvplot \
+    datashader \
+    plotly \
+    # --- Inference, Fitting & Machine Learning ---
+    emcee \
+    corner \
+    dynesty \
+    astroml \
+    lmfit \
     && mamba clean --all -f -y
 
 # Install additional Python packages via pip
 RUN pip install --no-cache-dir \
     astrocut \
-    lineassp
+    pyspac \
+    lineassp \
+    pzserver \
+    rail \
+    sora-astro
