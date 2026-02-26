@@ -8,6 +8,7 @@ RUN conda config --add channels conda-forge && \
     conda config --set channel_priority strict
 
 RUN apt-get update --yes && \
+    apt-get install --yes --no-install-recommends \
     wget \
     gnupg \
     ca-certificates \

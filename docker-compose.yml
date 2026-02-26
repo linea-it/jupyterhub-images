@@ -1,9 +1,35 @@
 services:
-  jupyter:
+  datascience:
     # image: quay.io/jupyter/datascience-notebook:2026-02-09
     build:
       context: .
-      dockerfile: general/Dockerfile
+      dockerfile: datascience/Dockerfile
+    ports:
+      - "8888:8888"
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - GRANT_SUDO=yes
+    volumes:
+      - ./work:/home/jovyan/work
+
+  solarsystem:
+    # image: quay.io/jupyter/datascience-notebook:2026-02-09
+    build:
+      context: .
+      dockerfile: solarsystem/Dockerfile
+    ports:
+      - "8888:8888"
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - GRANT_SUDO=yes
+    volumes:
+      - ./work:/home/jovyan/work
+
+  astronomy:
+    # image: quay.io/jupyter/datascience-notebook:2026-02-09
+    build:
+      context: .
+      dockerfile: astronomy/Dockerfile
     ports:
       - "8888:8888"
     environment:
