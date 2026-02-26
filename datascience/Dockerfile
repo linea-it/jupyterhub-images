@@ -9,10 +9,17 @@ RUN conda config --add channels conda-forge && \
 
 RUN apt-get update --yes && \
     apt-get install --yes --no-install-recommends \
-    ca-certificates \
     wget \
     gnupg \
-    gcc \
+    ca-certificates \
+    libcfitsio-dev \
+    wcslib-dev \
+    liberfa-dev \
+    libchealpix-dev \
+    libhealpix-cxx-dev \
+    libopenblas-dev \
+    liblapack-dev \
+    gcc && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Postgresql client
