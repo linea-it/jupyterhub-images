@@ -14,11 +14,14 @@ jobs:
       matrix:
         image:
           - name: datascience
-            context: datascience
+            context: .
+            file: datascience/Dockerfile
           - name: astronomy
-            context: astronomy
+            context: .
+            file: astronomy/Dockerfile
           - name: solarsystem
-            context: solarsystem
+            context: .
+            file: solarsystem/Dockerfile
 
     env:
       DOCKERHUB_ORG: linea
@@ -46,7 +49,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.image.context }}
-          file: ${{ matrix.image.context }}/Dockerfile
+          file: ${{ matrix.image.file }}
           push: false
           tags: |
             ${{ env.IMAGE_NAME }}:${{ env.DATE }}
@@ -71,7 +74,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.image.context }}
-          file: ${{ matrix.image.context }}/Dockerfile
+          file: ${{ matrix.image.file }}
           push: true
           tags: |
             ${{ env.IMAGE_NAME }}:${{ env.DATE }}
@@ -86,6 +89,7 @@ jobs:
         run: |
           echo "-----------------------------"
           echo "Image Context: ${{ matrix.image.context }}"
+          echo "Dockerfile: ${{ matrix.image.file }}"
           echo "Image Name: $IMAGE_NAME"
           echo "DATE tag  : $IMAGE_NAME:$DATE"
           echo "PYTHON tag: $IMAGE_NAME:$PYTHON_TAG"
