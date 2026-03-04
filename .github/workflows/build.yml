@@ -20,7 +20,7 @@ jobs:
             context: .
             file: astronomy/Dockerfile
           - name: solarsystem
-            context: solarsystem
+            context: .
             file: solarsystem/Dockerfile
 
     env:
