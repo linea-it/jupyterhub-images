@@ -41,6 +41,22 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends postgresql-client-18 && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Adicionar welcome message
+# -----------------------------------------------------
+# Arquivo é copiado para /home/${NB_USER}/notebooks/tutorials/ similar ao rubin
+USER root
+COPY notebook-templates/ /home/${NB_USER}/notebooks/tutorials/
+COPY datascience/welcome/ /home/${NB_USER}/notebooks/tutorials/
+RUN chown -R ${NB_UID}:users /home/${NB_USER}/notebooks/tutorials/
+# Configurar default_url para abrir o welcome message
+# default_url via json config (mais alta prioridade que jupyter_server_config.py)
+RUN echo '{"ServerApp":{"default_url":"/lab/tree/notebooks/tutorials/welcome.md"},"LabApp":{"default_url":"/lab/tree/notebooks/tutorials/welcome.md"}}' > /opt/conda/etc/jupyter/jupyter_server_config.d/welcome.json
+ENV NOTEBOOK_ARGS="--ContentsManager.allow_hidden=True --ServerApp.default_url=/lab/tree/notebooks/tutorials/welcome.md --LabApp.default_url=/lab/tree/notebooks/tutorials/welcome.md"
+# Abrir todos os .md com Markdown Preview (renderizado) em vez do editor de texto
+RUN LAB_SETTINGS="/opt/conda/share/jupyter/lab/settings" && \
+    mkdir -p "${LAB_SETTINGS}" && \
+    echo '{"@jupyterlab/docmanager-extension:plugin":{"defaultViewers":{"markdown":"Markdown Preview"}}}' > "${LAB_SETTINGS}/overrides.json" && \
+    chown -R ${NB_UID}:users "${LAB_SETTINGS}"
 
 
 # Python dependencies
@@ -60,3 +76,4 @@ RUN mamba install -y \
 RUN pip install --no-cache-dir \
     astrocut \
     lineassp
+
