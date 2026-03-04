@@ -58,6 +58,23 @@ RUN LAB_SETTINGS="/opt/conda/share/jupyter/lab/settings" && \
     echo '{"@jupyterlab/docmanager-extension:plugin":{"defaultViewers":{"markdown":"Markdown Preview"}}}' > "${LAB_SETTINGS}/overrides.json" && \
     chown -R ${NB_UID}:users "${LAB_SETTINGS}"
 
+# Adiiconar extensões JupyterLab 
+# -----------------------------------------------------
+# Adicionar extensão Jupyter linea-tutorials-menu
+ARG WHEEL_URL=https://github.com/linea-it/jupyterhub-templates/releases/download/v0.1.0/templates_menu-0.1.0-py3-none-any.whl
+USER root
+RUN mkdir -p /opt/notebook-templates
+COPY ../notebook-templates/ /opt/notebook-templates/
+RUN chown -R  ${NB_UID}:users /opt/notebook-templates
+RUN curl -f -L -o /tmp/templates_menu-0.1.0-py3-none-any.whl "${WHEEL_URL}" \
+    && python3 -c "import zipfile; zipfile.ZipFile('/tmp/templates_menu-0.1.0-py3-none-any.whl')" \
+    || (echo "Downloaded file is not a valid wheel. Confira WHEEL_URL e se o release/asset existem e são públicos." && exit 1)
+USER ${NB_UID}
+RUN pip install --no-cache-dir /tmp/templates_menu-0.1.0-py3-none-any.whl
+USER root
+RUN printf '%s\n' '{' '  "ServerApp": {' '    "jpserver_extensions": {' '      "templates_menu": true' '    }' '  }' '}' > /opt/conda/etc/jupyter/jupyter_server_config.d/templates_menu.json
+ENV JUPYTER_TEMPLATES_DIR=/opt/notebook-templates
+
 
 # Python dependencies
 # -----------------------------------------------------
