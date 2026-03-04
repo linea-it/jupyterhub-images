@@ -64,11 +64,14 @@ To add a new image:
       matrix:
         image:
           - name: datascience
-            context: datascience
+            context: .
+            file: datascience/Dockerfile
           - name: solarsystem
-            context: solarsystem
+            context: .
+            file: solarsystem/Dockerfile
           - name: newimage
-            context: newimage
+            context: .
+            file: newimage/Dockerfile
     ```
 
 3. Commit and open a Pull Request.
@@ -151,6 +154,76 @@ To add new libraries:
   ```
 * Avoid modifying existing image tags.
 
+## Image Customization (Templates, AI Host, Welcome)
+
+### 1) How to add notebook templates (`notebook-templates/`)
+
+Templates are shared across images and must live in the repository root:
+
+```
+notebook-templates/
+```
+
+To expose templates inside an image, ensure the image Dockerfile includes:
+
+```dockerfile
+COPY notebook-templates/ /home/${NB_USER}/notebooks/tutorials/
+COPY notebook-templates/ /opt/notebook-templates/
+ENV JUPYTER_TEMPLATES_DIR=/opt/notebook-templates
+```
+
+And the server extension config:
+
+```dockerfile
+RUN printf '%s\n' '{' '  "ServerApp": {' '    "jpserver_extensions": {' '      "templates_menu": true' '    }' '  }' '}' > /opt/conda/etc/jupyter/jupyter_server_config.d/templates_menu.json
+```
+
+Important: use build context `.` in CI/local builds so `notebook-templates/` is available to `COPY`.
+
+### 2) How and where to update `LINEA_HOST` for AI configuration
+
+`LINEA_HOST` is defined in:
+
+* `setup_ai/setup_ai_config.py`
+* `setup_ai/linea_provider/src/linea_provider/provider.py`
+
+Update this constant:
+
+```python
+LINEA_HOST = "http://your-host:11434"
+```
+
+Important: keep both files in sync. If you change `LINEA_HOST` in one place, update the other one to the same value.
+
+This script is copied and executed during image build:
+
+* `COPY setup_ai/setup_ai_config.py /tmp/setup_ai_config.py`
+* `python3 /tmp/setup_ai_config.py`
+
+It writes Jupyter AI settings (provider fields and aliases) into the user config at build/runtime setup.
+
+### 3) How to update the welcome message per image
+
+Each image should have its own welcome directory:
+
+* `datascience/welcome/`
+* `astronomy/welcome/`
+* `solarsystem/welcome/`
+
+Each directory should contain at least:
+
+* `welcome.md`
+* `image.png`
+
+In each Dockerfile, point `COPY` to the image-specific welcome path:
+
+```dockerfile
+COPY <image>/welcome/ /home/${NB_USER}/notebooks/tutorials/
+RUN echo '{"ServerApp":{"default_url":"/lab/tree/notebooks/tutorials/welcome.md"},"LabApp":{"default_url":"/lab/tree/notebooks/tutorials/welcome.md"}}' > /opt/conda/etc/jupyter/jupyter_server_config.d/welcome.json
+```
+
+This makes JupyterLab open the welcome page by default.
+
 ---
 
 # Local Build (Manual Test)
@@ -161,7 +234,7 @@ You can build locally using Docker:
 DOCKER_BUILDKIT=1 docker build \
   -f datascience/Dockerfile \
   -t linea/jupyter-datascience:test \
-  datascience
+  .
 ```
 
 ---
