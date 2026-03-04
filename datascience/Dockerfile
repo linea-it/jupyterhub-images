@@ -95,6 +95,25 @@ RUN jupyter lab --generate-config && \
     pip install /tmp/linea_provider/ && \
     python3 /tmp/setup_ai_config.py
 
+# Extensoes Juypyterlab genéricas
+RUN pip install --no-cache-dir jupyterlab_execute_time \
+    jupytext \
+    jupyterlab-git \
+    jupyterlab-lsp \
+    python-lsp-server \
+    jupyter_bokeh \
+    pyviz_comms \
+    ipyaladin \
+    "holoviews[recommended]" \
+    hvplot \
+    datashader \
+    jupyterlab-code-formatter \
+    black \
+    isort \
+    jupyterlab-spreadsheet-editor \
+    ipyvolume \
+    jupyter-resource-usage                                                        
+
 
 # Python dependencies
 # -----------------------------------------------------
