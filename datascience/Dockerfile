@@ -64,7 +64,7 @@ RUN LAB_SETTINGS="/opt/conda/share/jupyter/lab/settings" && \
 ARG WHEEL_URL=https://github.com/linea-it/jupyterhub-templates/releases/download/v0.1.0/templates_menu-0.1.0-py3-none-any.whl
 USER root
 RUN mkdir -p /opt/notebook-templates
-COPY ../notebook-templates/ /opt/notebook-templates/
+COPY notebook-templates/ /opt/notebook-templates/
 RUN chown -R  ${NB_UID}:users /opt/notebook-templates
 RUN curl -f -L -o /tmp/templates_menu-0.1.0-py3-none-any.whl "${WHEEL_URL}" \
     && python3 -c "import zipfile; zipfile.ZipFile('/tmp/templates_menu-0.1.0-py3-none-any.whl')" \
