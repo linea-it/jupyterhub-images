@@ -53,7 +53,7 @@ RUN LAB_SETTINGS="/opt/conda/share/jupyter/lab/settings" && \
     echo '{"@jupyterlab/docmanager-extension:plugin":{"defaultViewers":{"markdown":"Markdown Preview"}}}' > "${LAB_SETTINGS}/overrides.json" && \
     chown -R ${NB_UID}:users "${LAB_SETTINGS}"
 
-# Adiiconar extensões JupyterLab 
+# Adiiconar extensões JupyterLab
 # -----------------------------------------------------
 # Adicionar extensão Jupyter linea-tutorials-menu
 ARG WHEEL_URL=https://github.com/linea-it/jupyterhub-templates/releases/download/v0.1.0/templates_menu-0.1.0-py3-none-any.whl
@@ -107,7 +107,7 @@ RUN pip install --no-cache-dir jupyterlab_execute_time \
     isort \
     jupyterlab-spreadsheet-editor \
     ipyvolume \
-    jupyter-resource-usage                                                        
+    jupyter-resource-usage
 
 # remoção de binários desnecessários
 RUN rm -f \
@@ -171,4 +171,3 @@ RUN mamba install -y \
 RUN pip install --no-cache-dir \
     astrocut \
     lineassp
-
