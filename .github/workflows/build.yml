@@ -17,7 +17,7 @@ jobs:
             context: .
             file: datascience/Dockerfile
           - name: astronomy
-            context: astronomy
+            context: .
             file: astronomy/Dockerfile
           - name: solarsystem
             context: solarsystem
