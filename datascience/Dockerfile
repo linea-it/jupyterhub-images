@@ -1,6 +1,5 @@
 FROM quay.io/jupyter/datascience-notebook:python-3.13
 
-
 # Use root to install system dependencies
 USER root
 
@@ -24,19 +23,15 @@ RUN apt-get update --yes && \
 
 # Postgresql client
 # -----------------------------------------------------
-# Criar diretório de keyrings
 RUN mkdir -p /etc/apt/keyrings
 
-# Adicionar chave do PostgreSQL
 RUN wget -qO - https://www.postgresql.org/media/keys/ACCC4CF8.asc \
     | gpg --dearmor -o /etc/apt/keyrings/postgresql.gpg
 
-# Adicionar repositório PGDG para Ubuntu 24.04 (noble)
 RUN echo "deb [signed-by=/etc/apt/keyrings/postgresql.gpg] \
     http://apt.postgresql.org/pub/repos/apt noble-pgdg main" \
     > /etc/apt/sources.list.d/pgdg.list
 
-# Instalar cliente 18
 RUN apt-get update && \
     apt-get install -y --no-install-recommends postgresql-client-18 && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -114,6 +109,11 @@ RUN pip install --no-cache-dir jupyterlab_execute_time \
     ipyvolume \
     jupyter-resource-usage                                                        
 
+# remoção de binários desnecessários
+RUN rm -f \
+    /usr/sbin/chroot \
+    /usr/bin/unshare \
+    /usr/bin/nsenter
 
 # Python dependencies
 # -----------------------------------------------------
@@ -126,6 +126,45 @@ RUN mamba install -y \
     # Database Access & Querying
     psycopg[c] \
     SQLAlchemy \
+    # --- Data Science ---
+    numpy \
+    scipy \
+    pandas \
+    matplotlib \
+    seaborn \
+    scikit-image \
+    scikit-learn \
+    dask \
+    # --- Astronomia ---
+    astropy \
+    astroquery \
+    healpy \
+    photutils \
+    regions \
+    reproject \
+    hats \
+    hats-import \
+    lsdb \
+    pyvo \
+    sbpy \
+    ipyaladin \
+    dustmaps \
+    specutils \
+    pyspeckit \
+    spiceypy \
+    cartopy \
+    # --- Interactive Visualization ---
+    bokeh \
+    holoviews \
+    hvplot \
+    datashader \
+    plotly \
+    # --- Inference, Fitting & Machine Learning ---
+    emcee \
+    corner \
+    dynesty \
+    astroml \
+    lmfit \
     && mamba clean --all -f -y
 
 # Install additional Python packages via pip
