@@ -168,9 +168,6 @@ RUN mamba install -y \
     astroml \
     lmfit \
     rebound \
-    reboundx \
-    lightkurve \
-    pds4_tools \
     pyvista \
     pooch \
     && mamba clean --all -f -y
@@ -182,4 +179,7 @@ RUN pip install --no-cache-dir \
     lineassp \
     pzserver \
     rail \
-    sora-astro
+    sora-astro \
+    reboundx \
+    lightkurve
+
