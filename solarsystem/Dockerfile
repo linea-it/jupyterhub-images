@@ -111,6 +111,7 @@ RUN pip install --no-cache-dir jupyterlab_execute_time \
 
 
 # remoção de binários desnecessários
+USER root
 RUN rm -f \
     /usr/sbin/chroot \
     /usr/bin/unshare \
