@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "linea-provider"
+version = "0.1.0"
+requires-python = ">=3.9"
+dependencies = [
+    "jupyter-ai-magics",
+    "langchain-ollama",
+]
+
+[project.entry-points."jupyter_ai.model_providers"]
+linea = "linea_provider.provider:LineaProvider"
+
+[tool.setuptools.packages.find]
+where = ["src"]

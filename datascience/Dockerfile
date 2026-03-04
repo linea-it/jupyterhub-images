@@ -75,6 +75,26 @@ USER root
 RUN printf '%s\n' '{' '  "ServerApp": {' '    "jpserver_extensions": {' '      "templates_menu": true' '    }' '  }' '}' > /opt/conda/etc/jupyter/jupyter_server_config.d/templates_menu.json
 ENV JUPYTER_TEMPLATES_DIR=/opt/notebook-templates
 
+# Extensoes para usar IA dentro do JupyterLab
+USER ${NB_UID}
+RUN pip install --no-cache-dir "jupyter-ai[all]<4" \
+    jupyter-ai-magics \
+    langchain-google-genai \
+    langchain-openai \
+    langchain-anthropic \
+    langchain-groq \
+    langchain-deepseek
+# Configurar IA para usar o provedor customizado LineA
+USER root
+COPY setup_ai/linea_provider/ /tmp/linea_provider/
+COPY setup_ai/setup_ai_config.py /tmp/setup_ai_config.py
+RUN chown -R ${NB_UID}:users /tmp/linea_provider/
+# Customizar configuração para usar o provedor customizado LineA e aliases para os modelos
+USER ${NB_UID}
+RUN jupyter lab --generate-config && \
+    pip install /tmp/linea_provider/ && \
+    python3 /tmp/setup_ai_config.py
+
 
 # Python dependencies
 # -----------------------------------------------------
