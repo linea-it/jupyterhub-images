@@ -261,7 +261,7 @@ In each Dockerfile, stage welcome files under `/opt/linea-tutorials/`:
 COPY notebook-templates/ /opt/linea-tutorials/
 COPY <image>/welcome/ /opt/linea-tutorials/
 RUN chmod -R a+rX /opt/linea-tutorials/
-RUN printf '#!/bin/bash\nmkdir -p "$HOME/notebooks/tutorials"\ncp -rn /opt/linea-tutorials/. "$HOME/notebooks/tutorials/"\n' \
+RUN printf '#!/bin/bash\nset -e\nmkdir -p "$HOME/notebooks/tutorials"\ncp -rn /opt/linea-tutorials/. "$HOME/notebooks/tutorials/"\nif [ "$(id -u)" = "0" ]; then\n  OWNER="$(ls -nd "$HOME" | awk '"'"'{print $3 ":" $4}'"'"')"\n  chown -R "$OWNER" "$HOME/notebooks/tutorials"\nfi\nchmod -R u+rwX "$HOME/notebooks/tutorials"\n' \
     > /usr/local/bin/before-notebook.d/10-init-tutorials.sh && \
     chmod +x /usr/local/bin/before-notebook.d/10-init-tutorials.sh
 RUN echo '{"ServerApp":{"default_url":"/lab/tree/notebooks/tutorials/welcome.md"},"LabApp":{"default_url":"/lab/tree/notebooks/tutorials/welcome.md"}}' > /opt/conda/etc/jupyter/jupyter_server_config.d/welcome.json
@@ -269,6 +269,7 @@ RUN echo '{"ServerApp":{"default_url":"/lab/tree/notebooks/tutorials/welcome.md"
 
 `before-notebook.d` is used because JupyterHub mounts the real user home over `/home/<username>` via PVC/NFS at spawn time.
 The `cp -rn` keeps user files and edits untouched while ensuring missing tutorial files are created.
+The script also enforces writable permissions (`u+rwX`) and, when running as root, aligns ownership with the mounted home owner.
 This makes JupyterLab open the welcome page by default without 404 on first launch.
 
 ---

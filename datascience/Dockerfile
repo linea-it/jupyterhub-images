@@ -47,7 +47,7 @@ RUN chmod -R a+rX /opt/linea-tutorials/
 
 # cp -rn: copia arquivos ausentes, preserva os que já existem (inclusive edições do usuário)
 # before-notebook.d roda antes do Jupyter subir, garantindo que o default_url sempre encontre o arquivo
-RUN printf '#!/bin/bash\nmkdir -p "$HOME/notebooks/tutorials"\ncp -rn /opt/linea-tutorials/. "$HOME/notebooks/tutorials/"\n' \
+RUN printf '#!/bin/bash\nset -e\nmkdir -p "$HOME/notebooks/tutorials"\ncp -rn /opt/linea-tutorials/. "$HOME/notebooks/tutorials/"\nif [ "$(id -u)" = "0" ]; then\n  OWNER="$(ls -nd "$HOME" | awk '"'"'{print $3 ":" $4}'"'"')"\n  chown -R "$OWNER" "$HOME/notebooks/tutorials"\nfi\nchmod -R u+rwX "$HOME/notebooks/tutorials"\n' \
     > /usr/local/bin/before-notebook.d/10-init-tutorials.sh && \
     chmod +x /usr/local/bin/before-notebook.d/10-init-tutorials.sh
 # Configurar default_url para abrir o welcome message
