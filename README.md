@@ -22,9 +22,25 @@ It provides reproducible, versioned Jupyter environments built on top of the off
 ```
 .
 ├── datascience/
-│   └── Dockerfile
+│   ├── Dockerfile
+│   ├── environment.yml
+│   └── welcome/
+│       ├── welcome.md
+│       └── image.png
+├── astronomy/
+│   ├── Dockerfile
+│   ├── environment.yml
+│   └── welcome/
+│       ├── welcome.md
+│       └── image.png
 ├── solarsystem/
-│   └── Dockerfile
+│   ├── Dockerfile
+│   ├── environment.yml
+│   └── welcome/
+│       ├── welcome.md
+│       └── image.png
+├── notebook-templates/
+│   └── ...
 ├── docker-compose.yml
 ├── .github/workflows/
 │   ├── build.yml
@@ -43,6 +59,7 @@ Each image has its own directory containing:
 ### Current images
 
 * `datascience/` → General scientific and astronomy stack.
+* `astronomy/` → Astronomy-focused stack.
 * `solarsystem/` → Solar System–specific stack (extendable).
 
 
@@ -55,6 +72,7 @@ To add a new image:
     ```
     newimage/
       Dockerfile
+      environment.yml
     ```
 
 2. Add the image to the matrix in `.github/workflows/build.yml`:
@@ -133,26 +151,45 @@ Manual execution behaves like `main` (build + push).
 
 # Adding or Updating Dependencies
 
+Dependencies are declared per image in `environment.yml` and applied with `mamba env update` to keep Conda and pip resolution in a single transaction, reducing the risk of pip replacing or removing Conda-managed packages:
+
+```dockerfile
+COPY <image>/environment.yml /tmp/environment.yml
+RUN mamba env update --name base -f /tmp/environment.yml && \
+    mamba clean --all -f -y
+RUN rm -rf /tmp/environment.yml
+```
+
 To add new libraries:
 
-1. Edit the appropriate `Dockerfile`.
-2. Add:
+1. Edit `<image>/environment.yml`.
+2. Put Conda/Mamba packages directly under `dependencies`.
+3. Put pip-only packages under:
 
-   * System dependencies under `USER root`
-   * Conda packages using `mamba`
-   * Pip packages using `pip install`
-3. Open a Pull Request.
-4. Validate build in CI.
+   ```yaml
+    name: base
+    channels:
+      - conda-forge
+      - defaults
+    dependencies:
+      # --- Database Access & Querying ---
+      - psycopg2
+      - sqlalchemy
+      # --- Pip-only packages ---
+      - pip
+      - pip:
+        - astrocut
+   ```
 
-### Best Practices
+4. Open a Pull Request.
+5. Validate build in CI.
 
-* Install conda packages before pip packages.
-* Clean mamba cache:
+### Pip compatibility guidelines
 
-  ```
-  mamba clean --all -f -y
-  ```
-* Avoid modifying existing image tags.
+* Prefer `conda-forge` packages when available; use `pip` only when a package is not available (or not viable) in Conda.
+* Do not install the same package in both Conda and pip in the same image.
+* Keep the `pip:` list inside `environment.yml` (instead of ad-hoc `pip install` lines) to preserve reproducibility.
+* When adding pip-only packages that depend on compiled scientific stack, run a local image build to validate solver/runtime compatibility.
 
 ## Image Customization (Templates, AI Host, Welcome)
 
@@ -167,8 +204,9 @@ notebook-templates/
 To expose templates inside an image, ensure the image Dockerfile includes:
 
 ```dockerfile
-COPY notebook-templates/ /home/${NB_USER}/notebooks/tutorials/
 COPY notebook-templates/ /opt/notebook-templates/
+RUN chown -R ${NB_UID}:users /opt/notebook-templates && \
+    chmod -R a+rX /opt/notebook-templates
 ENV JUPYTER_TEMPLATES_DIR=/opt/notebook-templates
 ```
 
@@ -177,6 +215,8 @@ And the server extension config:
 ```dockerfile
 RUN printf '%s\n' '{' '  "ServerApp": {' '    "jpserver_extensions": {' '      "templates_menu": true' '    }' '  }' '}' > /opt/conda/etc/jupyter/jupyter_server_config.d/templates_menu.json
 ```
+
+`chmod -R a+rX` is required so dynamic UIDs from JupyterHub/Kubernetes can read templates.
 
 Important: use build context `.` in CI/local builds so `notebook-templates/` is available to `COPY`.
 
@@ -215,14 +255,21 @@ Each directory should contain at least:
 * `welcome.md`
 * `image.png`
 
-In each Dockerfile, point `COPY` to the image-specific welcome path:
+In each Dockerfile, stage welcome files under `/opt/linea-tutorials/`:
 
 ```dockerfile
-COPY <image>/welcome/ /home/${NB_USER}/notebooks/tutorials/
+COPY notebook-templates/ /opt/linea-tutorials/
+COPY <image>/welcome/ /opt/linea-tutorials/
+RUN chmod -R a+rX /opt/linea-tutorials/
+RUN printf '#!/bin/bash\nmkdir -p "$HOME/notebooks/tutorials"\ncp -rn /opt/linea-tutorials/. "$HOME/notebooks/tutorials/"\n' \
+    > /usr/local/bin/before-notebook.d/10-init-tutorials.sh && \
+    chmod +x /usr/local/bin/before-notebook.d/10-init-tutorials.sh
 RUN echo '{"ServerApp":{"default_url":"/lab/tree/notebooks/tutorials/welcome.md"},"LabApp":{"default_url":"/lab/tree/notebooks/tutorials/welcome.md"}}' > /opt/conda/etc/jupyter/jupyter_server_config.d/welcome.json
 ```
 
-This makes JupyterLab open the welcome page by default.
+`before-notebook.d` is used because JupyterHub mounts the real user home over `/home/<username>` via PVC/NFS at spawn time.
+The `cp -rn` keeps user files and edits untouched while ensuring missing tutorial files are created.
+This makes JupyterLab open the welcome page by default without 404 on first launch.
 
 ---
 

@@ -3,6 +3,9 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  # --- Database Access & Querying ---
+  - psycopg2
+  - sqlalchemy
   # --- Pip-only packages ---
   - pip
   - pip:
