@@ -38,11 +38,18 @@ RUN apt-get update && \
 
 # Adicionar welcome message
 # -----------------------------------------------------
-# Arquivo é copiado para /home/${NB_USER}/notebooks/tutorials/ similar ao rubin
+# Arquivos ficam em /opt/linea-tutorials/ (staging na imagem)
+# e são copiados para $HOME do usuário real via before-notebook.d
 USER root
-COPY notebook-templates/ /home/${NB_USER}/notebooks/tutorials/
-COPY astronomy/welcome/ /home/${NB_USER}/notebooks/tutorials/
-RUN chown -R ${NB_UID}:users /home/${NB_USER}/notebooks/tutorials/
+COPY notebook-templates/ /opt/linea-tutorials/
+COPY astronomy/welcome/ /opt/linea-tutorials/
+RUN chmod -R a+rX /opt/linea-tutorials/
+
+# cp -rn: copia arquivos ausentes, preserva os que já existem (inclusive edições do usuário)
+# before-notebook.d roda antes do Jupyter subir, garantindo que o default_url sempre encontre o arquivo
+RUN printf '#!/bin/bash\nmkdir -p "$HOME/notebooks/tutorials"\ncp -rn /opt/linea-tutorials/. "$HOME/notebooks/tutorials/"\n' \
+    > /usr/local/bin/before-notebook.d/10-init-tutorials.sh && \
+    chmod +x /usr/local/bin/before-notebook.d/10-init-tutorials.sh
 # Configurar default_url para abrir o welcome message
 # default_url via json config (mais alta prioridade que jupyter_server_config.py)
 RUN echo '{"ServerApp":{"default_url":"/lab/tree/notebooks/tutorials/welcome.md"},"LabApp":{"default_url":"/lab/tree/notebooks/tutorials/welcome.md"}}' > /opt/conda/etc/jupyter/jupyter_server_config.d/welcome.json
@@ -60,13 +67,15 @@ ARG WHEEL_URL=https://github.com/linea-it/jupyterhub-templates/releases/download
 USER root
 RUN mkdir -p /opt/notebook-templates
 COPY notebook-templates/ /opt/notebook-templates/
-RUN chown -R  ${NB_UID}:users /opt/notebook-templates
+RUN chown -R  ${NB_UID}:users /opt/notebook-templates && \
+    chmod -R a+rX /opt/notebook-templates
 RUN curl -f -L -o /tmp/templates_menu-0.1.0-py3-none-any.whl "${WHEEL_URL}" \
     && python3 -c "import zipfile; zipfile.ZipFile('/tmp/templates_menu-0.1.0-py3-none-any.whl')" \
     || (echo "Downloaded file is not a valid wheel. Confira WHEEL_URL e se o release/asset existem e são públicos." && exit 1)
 USER ${NB_UID}
 RUN pip install --no-cache-dir /tmp/templates_menu-0.1.0-py3-none-any.whl
 USER root
+RUN rm -f /tmp/templates_menu-0.1.0-py3-none-any.whl
 RUN printf '%s\n' '{' '  "ServerApp": {' '    "jpserver_extensions": {' '      "templates_menu": true' '    }' '  }' '}' > /opt/conda/etc/jupyter/jupyter_server_config.d/templates_menu.json
 ENV JUPYTER_TEMPLATES_DIR=/opt/notebook-templates
 
@@ -89,6 +98,8 @@ USER ${NB_UID}
 RUN jupyter lab --generate-config && \
     pip install /tmp/linea_provider/ && \
     python3 /tmp/setup_ai_config.py
+USER root
+RUN rm -rf /tmp/linea_provider/ /tmp/setup_ai_config.py
 
 # Extensoes Juypyterlab genéricas
 RUN pip install --no-cache-dir jupyterlab_execute_time \
@@ -118,68 +129,8 @@ RUN rm -f \
 
 # Python dependencies
 # -----------------------------------------------------
-
-# Switch back to the notebook user
-USER ${NB_UID}
-
-# Install Python packages via mamba
-RUN mamba install -y \
-    # Database Access & Querying
-    psycopg[c] \
-    SQLAlchemy \
-    # --- Data Science ---
-    numpy \
-    scipy \
-    pandas \
-    matplotlib \
-    seaborn \
-    scikit-image \
-    scikit-learn \
-    dask \
-    # --- Astronomia ---
-    astropy \
-    astroquery \
-    healpy \
-    photutils \
-    regions \
-    reproject \
-    hats \
-    hats-import \
-    lsdb \
-    pyvo \
-    sbpy \
-    # ipyaladin também é instalado via pip para garantir integração/extensão no JupyterLab
-    ipyaladin \
-    dustmaps \
-    specutils \
-    pyspeckit \
-    spiceypy \
-    cartopy \
-    # --- Interactive Visualization ---
-    bokeh \
-    holoviews \
-    # hvplot/datashader também são instalados via pip para garantir integração/extensão no JupyterLab
-    # hvplot \
-    # datashader \
-    plotly \
-    # --- Inference, Fitting & Machine Learning ---
-    emcee \
-    corner \
-    dynesty \
-    astroml \
-    lmfit \
-    rebound \
-    pyvista \
-    pooch \
+# mamba como root para evitar Permission denied ao atualizar pacotes da imagem base;
+COPY astronomy/environment.yml /tmp/environment.yml
+RUN mamba env update --name base -f /tmp/environment.yml \
     && mamba clean --all -f -y
-
-# Install additional Python packages via pip
-RUN pip install --no-cache-dir \
-    astrocut \
-    pyspac \
-    lineassp \
-    pzserver \
-    rail \
-    sora-astro \
-    reboundx \
-    lightkurve
+RUN rm -rf /tmp/environment.yml

@@ -1,0 +1,11 @@
+name: base
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  # --- Pip-only packages ---
+  - pip
+  - pip:
+    - lineassp
+    - pzserver
+    - sora-astro
