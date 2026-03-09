@@ -92,14 +92,16 @@ RUN pip install --no-cache-dir "jupyter-ai[all]<4" \
 USER root
 COPY setup_ai/linea_provider/ /tmp/linea_provider/
 COPY setup_ai/setup_ai_config.py /tmp/setup_ai_config.py
-RUN chown -R ${NB_UID}:users /tmp/linea_provider/
+COPY setup_ai/15-init-jupyter-ai.sh /tmp/15-init-jupyter-ai.sh
+RUN chown -R ${NB_UID}:users /tmp
 # Customizar configuração para usar o provedor customizado LineA e aliases para os modelos
 USER ${NB_UID}
 RUN jupyter lab --generate-config && \
     pip install /tmp/linea_provider/ && \
     python3 /tmp/setup_ai_config.py
 USER root
-RUN rm -rf /tmp/linea_provider/ /tmp/setup_ai_config.py
+RUN chmod +x /tmp/15-init-jupyter-ai.sh && mv /tmp/15-init-jupyter-ai.sh /usr/local/bin/before-notebook.d/ && \
+    rm -rf /tmp/linea_provider/ /tmp/setup_ai_config.py
 
 # Extensoes Juypyterlab genéricas
 RUN pip install --no-cache-dir jupyterlab_execute_time \
