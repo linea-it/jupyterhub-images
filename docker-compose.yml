@@ -32,9 +32,9 @@ services:
       dockerfile: astronomy/Dockerfile
     ports:
       - "8888:8888"
-    environment:
-      - JUPYTER_ENABLE_LAB=yes
-      - GRANT_SUDO=yes
+    # environment:
+    #   - JUPYTER_ENABLE_LAB=yes
+    #   - GRANT_SUDO=yes
     volumes:
       - ./work:/home/jovyan/work
 

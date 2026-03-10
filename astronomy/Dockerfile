@@ -136,3 +136,13 @@ COPY astronomy/environment.yml /tmp/environment.yml
 RUN mamba env update --name base -f /tmp/environment.yml \
     && mamba clean --all -f -y
 RUN rm -rf /tmp/environment.yml
+
+
+# pz-rail 2.x
+# https://rail-hub.readthedocs.io/en/latest/source/user_guide/installation.html
+# -----------------------------------------------------
+RUN git clone https://github.com/LSSTDESC/rail.git /tmp/rail && \
+    cd /tmp/rail && \
+    mamba install --name base -c conda-forge --file conda-reqs.txt -y && \
+    pip install .[algos] && \
+    rm -rf /tmp/rail
