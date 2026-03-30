@@ -1,32 +1,54 @@
-# Bem-vindo ao ambiente de Astronomia LineA
+<img align="left" src="image.png" width="120" style="padding: 20px">
+<img align="left" src="https://jupyter.org/assets/homepage/hublogo.svg" width="250" style="padding: 20px">
 
-![Logo LineA](image.png)
+<div style="clear: both;"></div>
 
-Este é o seu ambiente Jupyter **Astronomy** preparado pela LineA. A imagem é baseada no [Jupyter Data Science Notebook](https://jupyter-docker-stacks.readthedocs.io/) (Python 3.13) e inclui o stack de astronomia, ferramentas de IA e extensões do JupyterLab.
+# Bem-vindo ao LIneA JupyterHub 👋  
+
+O JupyterHub é um ambiente de desenvolvimento multiusuário baseado em *Jupyter Notebooks*. Aqui, você pode programar, analisar dados e visualizar resultados diretamente no navegador, sem precisar instalar ou configurar nada no seu computador.  
+
+Como parte da LIneA Science Platform, ele é ideal para:  
+- desenvolver software científico  
+- explorar e analisar conjuntos de dados menores  
+- realizar processamentos leves  
+- visualizar e compartilhar resultados  
+
+Se você precisar de mais poder computacional ou trabalhar com grandes volumes de dados (*big data*), entre em contato pelo e-mail helpdesk@linea.org.br para solicitar acesso ao ambiente de HPC, disponibilizado por meio do [Open OnDemand](https://ondemand.linea.org.br/).  
+
 
 ## O que está disponível
 
-- **Python 3.13** com o stack base de ciência de dados (NumPy, SciPy, pandas, Matplotlib, Seaborn, scikit-image, scikit-learn, Dask) e **pacotes de astronomia** instalados via mamba:
-  - **Astropy**, **Astroquery**, **Healpy**, **Photutils**, **Regions**, **Reproject**
-  - **HATS**, **hats-import**, **LSDB**, **PyVO**, **sbpy**, **ipyaladin** (Aladin)
-  - **Dustmaps**, **Specutils**, **PySpecKit**, **SpiceyPy**, **Cartopy**
-  - **Visualização**: Bokeh, HoloViews, hvplot, Datashader, Plotly
-  - **Inferência e ML**: emcee, corner, dynesty, AstroML, lmfit
+O JupyterHub está disponível em duas opções (imagens Docker), que variam de acordo com as bibliotecas e extensões previamente instaladas:  
 
-- **Pacotes adicionais (pip)**: astrocut, pyspac, lineassp, pzserver, rail, sora-astro.
+* **Data Science** – o stack [Jupyter Data Science Notebook](https://jupyter-docker-stacks.readthedocs.io/), incluindo bibliotecas populares de *data science* como Pandas, NumPy, Matplotlib, SciPy e Scikit-learn.  
+* **Astronomy** – o stack de astronomia, que inclui as principais bibliotecas de *data science* mais as bibliotecas mais utilizadas na área, como Astropy, Astroquery, Healpy, Photutils, PyVO, Dustmaps, LSDB, AstroML, entre outras.  
 
-- **Banco de dados**: cliente **PostgreSQL 18**, **psycopg** e **SQLAlchemy** para conectar e consultar bancos de dados.
+Para acessar a lista completa de bibliotecas e suas respectivas versões disponíveis por padrão, abra um Terminal e execute:  
 
-- **Templates de notebooks**: menu de modelos de notebooks no JupyterLab (extensão linea-tutorials-menu) para começar rapidamente novos projetos.
+```bash
+$ pip list
+```
 
-- **Jupyter AI**: assistente de IA integrado ao Lab, com suporte a Google GenAI, OpenAI, Anthropic, Groq, DeepSeek e ao provedor customizado LineA (aliases coder05, coder1b, coder3b, coder7b).
+Caso não encontre uma biblioteca essencial para o seu trabalho, ou precise utilizar versões específicas diferentes das padrão, também é possível criar ambientes customizados utilizando Conda ou Mamba.
 
-- **Desenvolvimento e produtividade**:
-  - **Git** (jupyterlab-git), **LSP** e **python-lsp-server**, **Jupytext**
-  - **Black** e **isort** com **jupyterlab-code-formatter**
-  - **jupyterlab_execute_time**, **jupyter-resource-usage**
-  - **jupyterlab-spreadsheet-editor**, **ipyvolume**
+## Jupyter AI
 
-Use o menu **Templates** para criar novos notebooks e o painel de **IA** para assistência no Lab.
+Ambas as imagens incluem um assistente de IA integrado ao JupyterLab, com suporte a Google GenAI, OpenAI, Anthropic, Groq, DeepSeek e ao provedor customizado LIneA (aliases coder05, coder1b, coder3b, coder7b). Para acessá-lo, clique no ícone de chat no menu vertical à esquerda.  
 
-Bom trabalho!
+
+## Tutorial Notebooks  
+
+👈 Acesse uma das opções de notebook tutorial:  
+
+* `PT-BR-jupyterhub-tutorial.ipynb` em português brasileiro  
+* `EN-jupyterhub-tutorial.ipynb` em inglês  
+* `ES-jupyterhub-tutorial.ipynb` em espanhol  
+
+para aprender como:  
+
+* utilizar um Jupyter Notebook (caso seja iniciante)  
+* acessar os dados hospedados no LIneA diretamente a partir de um notebook  
+* customizar o seu ambiente  
+
+
+Bom trabalho! 🚀  
