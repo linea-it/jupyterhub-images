@@ -42,7 +42,7 @@ RUN apt-get update && \
 # e são copiados para $HOME do usuário real via before-notebook.d
 USER root
 COPY notebook-templates/ /opt/linea-tutorials/
-COPY astronomy/welcome/ /opt/linea-tutorials/
+COPY welcome/ /opt/linea-tutorials/
 RUN chmod -R a+rX /opt/linea-tutorials/
 
 # cp -rn: copia arquivos ausentes, preserva os que já existem (inclusive edições do usuário)
