@@ -1,6 +1,7 @@
 import json, os
 
 LINEA_HOST = 'http://ollama.linea-llm.svc.cluster.local:11434'
+# LINEA_HOST = 'http://host.docker.internal:11434'
 
 # ── 1. ipython_config.py (%%ai magics) ───────────────────────────────────────
 IPYTHON_DIR = '/home/jovyan/.ipython/profile_default'
