@@ -19,9 +19,9 @@ jobs:
           - name: astronomy
             context: .
             file: astronomy/Dockerfile
-          # - name: solarsystem
-          #   context: .
-          #   file: solarsystem/Dockerfile
+          - name: solarsystem
+            context: .
+            file: solarsystem/Dockerfile
 
     env:
       DOCKERHUB_ORG: linea
