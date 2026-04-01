@@ -1,4 +1,4 @@
-FROM quay.io/jupyter/datascience-notebook:python-3.13
+FROM quay.io/jupyter/base-notebook:python-3.13
 
 # Use root to install system dependencies
 USER root
@@ -7,7 +7,7 @@ RUN conda config --add channels conda-forge && \
     conda config --set channel_priority strict
 
 RUN apt-get update --yes && \
-    apt-get install --yes --no-install-recommends \
+    apt-get install --yes --no-install-recommends build-essential \
     wget \
     gnupg \
     ca-certificates \
@@ -18,7 +18,10 @@ RUN apt-get update --yes && \
     libhealpix-cxx-dev \
     libopenblas-dev \
     liblapack-dev \
-    gcc && \
+    gcc \
+    gfortran \
+    curl \
+    git && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Postgresql client
@@ -81,8 +84,7 @@ ENV JUPYTER_TEMPLATES_DIR=/opt/notebook-templates
 
 # Extensoes para usar IA dentro do JupyterLab
 USER ${NB_UID}
-RUN pip install --no-cache-dir "jupyter-ai[all]<4" \
-    jupyter-ai-magics \
+RUN pip install --no-cache-dir "jupyter-ai<3" \
     langchain-google-genai \
     langchain-openai \
     langchain-anthropic \

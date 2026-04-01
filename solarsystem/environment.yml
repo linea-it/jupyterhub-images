@@ -6,9 +6,33 @@ dependencies:
   # --- Database Access & Querying ---
   - psycopg2
   - sqlalchemy
+  # --- Sistema solar / dinâmica orbital (movido da imagem astronomy) ---
+  - astropy
+  - astroquery
+  - photutils
+  - sbpy
+  - spiceypy
+  - rebound
+  - cartopy
+  - lsdb
+  - pyvo
+  - ipyaladin
+  # --- Ajuste / inferência (fortes candidatos SS) ---
+  - lmfit
+  - emcee
+  - corner
+  - dynesty
+  # --- Fotometria / espectros / poeira ---
+  - specutils
+  - dustmaps
+  - regions
+  - pooch
   # --- Pip-only packages ---
   - pip
+  - "setuptools<81"
   - pip:
     - lineassp
     - pzserver
     - sora-astro
+    - reboundx
+    - lightkurve
