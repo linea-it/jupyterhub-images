@@ -81,8 +81,7 @@ ENV JUPYTER_TEMPLATES_DIR=/opt/notebook-templates
 
 # Extensoes para usar IA dentro do JupyterLab
 USER ${NB_UID}
-RUN pip install --no-cache-dir "jupyter-ai[all]<4" \
-    jupyter-ai-magics \
+RUN pip install --no-cache-dir "jupyter-ai<3" \
     langchain-google-genai \
     langchain-openai \
     langchain-anthropic \
