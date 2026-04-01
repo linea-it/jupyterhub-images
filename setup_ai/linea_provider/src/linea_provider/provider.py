@@ -2,6 +2,7 @@ from jupyter_ai_magics import BaseProvider
 from langchain_ollama import ChatOllama
 
 LINEA_HOST = "http://ollama.linea-llm.svc.cluster.local:11434"
+# LINEA_HOST = "http://host.docker.internal:11434"
 
 class LineaProvider(BaseProvider, ChatOllama):
     id = "linea"

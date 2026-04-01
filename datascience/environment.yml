@@ -3,6 +3,9 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - pyvo
+  - lsdb
+  - setuptools
   # --- Pip-only packages ---
   - pip
   - pip:
