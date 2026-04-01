@@ -14,25 +14,32 @@ on:
           - solarsystem
 
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          ALL='[
+            {"name":"datascience","context":".","file":"datascience/Dockerfile"},
+            {"name":"astronomy","context":".","file":"astronomy/Dockerfile"},
+            {"name":"solarsystem","context":".","file":"solarsystem/Dockerfile"}
+          ]'
+          IMAGE="${{ github.event.inputs.image }}"
+          if [ "$IMAGE" = "all" ]; then
+            FILTERED="$ALL"
+          else
+            FILTERED=$(echo "$ALL" | jq -c --arg img "$IMAGE" '[.[] | select(.name == $img)]')
+          fi
+          echo "matrix={\"image\":$(echo "$FILTERED" | jq -c .)}" >> $GITHUB_OUTPUT
+
   build:
+    needs: setup
     runs-on: ubuntu-latest
 
     strategy:
-      matrix:
-        image:
-          - name: datascience
-            context: .
-            file: datascience/Dockerfile
-          - name: astronomy
-            context: .
-            file: astronomy/Dockerfile
-          - name: solarsystem
-            context: .
-            file: solarsystem/Dockerfile
-
-    if: >-
-      github.event.inputs.image == 'all' ||
-      github.event.inputs.image == matrix.image.name
+      matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
 
     env:
       DOCKERHUB_ORG: linea
