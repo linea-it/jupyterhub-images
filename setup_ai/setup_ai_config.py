@@ -1,7 +1,13 @@
-import json, os
+import json
+import os
 
 LINEA_HOST = 'http://ollama.linea-llm.svc.cluster.local:11434'
-# LINEA_HOST = 'http://host.docker.internal:11434'
+
+try:
+    from linea_provider.provider import DEFAULT_EMBEDDING_MODEL
+except ImportError:
+    DEFAULT_EMBEDDING_MODEL = 'nomic-embed-text'
+DEFAULT_EMBEDDINGS_PROVIDER_ID = f'linea:{DEFAULT_EMBEDDING_MODEL}'
 
 # ── 1. ipython_config.py (%%ai magics) ───────────────────────────────────────
 IPYTHON_DIR = '/home/jovyan/.ipython/profile_default'
@@ -42,12 +48,21 @@ ai_cfg_path = os.path.join(AI_DATA_DIR, 'config.json')
 cfg = json.load(open(ai_cfg_path)) if os.path.exists(ai_cfg_path) else {}
 
 cfg.setdefault('model_provider_id', 'linea:qwen2.5-coder:0.5b')
-cfg.setdefault('embeddings_provider_id', None)
+if not cfg.get('embeddings_provider_id'):
+    cfg['embeddings_provider_id'] = DEFAULT_EMBEDDINGS_PROVIDER_ID
 cfg.setdefault('send_with_shift_enter', False)
 cfg.setdefault('api_keys', {})
 cfg.setdefault('completions_model_provider_id', None)
 cfg.setdefault('completions_fields', {})
-cfg.setdefault('embeddings_fields', {})
+emb_fields = cfg.setdefault('embeddings_fields', {})
+emb_key = DEFAULT_EMBEDDINGS_PROVIDER_ID
+if emb_key not in emb_fields:
+    emb_fields[emb_key] = {}
+# Não gravar base_url aqui: o Jupyter AI mostra esse valor no campo “opcional” da UI.
+# LineaEmbeddingsProvider aplica LINEA_HOST em __init__ quando base_url está ausente.
+blk = emb_fields.get(emb_key)
+if isinstance(blk, dict) and blk.get('base_url') == LINEA_HOST:
+    emb_fields[emb_key] = {k: v for k, v in blk.items() if k != 'base_url'}
 cfg.setdefault('fields', {
     'linea:qwen2.5-coder:0.5b': {'base_url': LINEA_HOST, 'num_ctx': 2048},
     'linea:qwen2.5-coder:1.5b': {'base_url': LINEA_HOST, 'num_ctx': 2048},
