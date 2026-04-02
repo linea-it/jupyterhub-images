@@ -17,6 +17,7 @@ dependencies:
   - lsdb
   - pyvo
   - ipyaladin
+  - astroml
   # --- Ajuste / inferência (fortes candidatos SS) ---
   - lmfit
   - emcee
@@ -36,3 +37,4 @@ dependencies:
     - sora-astro
     - reboundx
     - lightkurve
+    - pyspac

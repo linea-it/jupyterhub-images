@@ -14,5 +14,8 @@ dependencies = [
 [project.entry-points."jupyter_ai.model_providers"]
 linea = "linea_provider.provider:LineaProvider"
 
+[project.entry-points."jupyter_ai.embeddings_model_providers"]
+linea = "linea_provider.provider:LineaEmbeddingsProvider"
+
 [tool.setuptools.packages.find]
 where = ["src"]

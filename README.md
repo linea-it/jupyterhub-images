@@ -23,30 +23,27 @@ It provides reproducible, versioned Jupyter environments built on top of the off
 .
 ├── datascience/
 │   ├── Dockerfile
-│   ├── environment.yml
-│   └── welcome/
-│       ├── welcome.md
-│       └── image.png
+│   └── environment.yml
 ├── astronomy/
 │   ├── Dockerfile
-│   ├── environment.yml
-│   └── welcome/
-│       ├── welcome.md
-│       └── image.png
+│   └── environment.yml
 ├── solarsystem/
 │   ├── Dockerfile
-│   ├── environment.yml
-│   └── welcome/
-│       ├── welcome.md
-│       └── image.png
-├── notebook-templates/
+│   └── environment.yml
+├── scripts/
+│   └── before-notebook.d/
+│       └── 10-init-tutorials.sh
+├── setup_ai/
 │   └── ...
 ├── docker-compose.yml
 ├── .github/workflows/
 │   ├── build.yml
+│   ├── build-manual.yml
 │   └── pre-commit.yml
 └── .pre-commit-config.yaml
 ```
+
+Tutorials (welcome message and notebook templates) are downloaded during Docker build from [linea-it/jupyterhub-tutorial](https://github.com/linea-it/jupyterhub-tutorial). At container start, `scripts/before-notebook.d/10-init-tutorials.sh` (installed under `/usr/local/bin/before-notebook.d/`) may refresh that content from the network and always syncs tutorials into the user’s home (see below).
 
 ## Image Directories
 
@@ -75,7 +72,9 @@ To add a new image:
       environment.yml
     ```
 
-2. Add the image to the matrix in `.github/workflows/build.yml`:
+2. Mirror the tutorial hooks from an existing `Dockerfile`: download tutorials at build time and `COPY scripts/before-notebook.d/10-init-tutorials.sh` into `/usr/local/bin/before-notebook.d/` (see any current image `Dockerfile`).
+
+3. Add the image to the matrix in `.github/workflows/build.yml`:
 
     ```yaml
     strategy:
@@ -92,19 +91,21 @@ To add a new image:
             file: newimage/Dockerfile
     ```
 
-3. Commit and open a Pull Request.
+4. Commit and open a Pull Request.
 
 The image will be built automatically on PR.
 
 
 # Image Tagging Strategy
 
-Each image is tagged with:
+## Automatic workflow ([`build.yml`](.github/workflows/build.yml))
+
+On **push to `main`**, each image is pushed with:
 
 * `YYYY-MM-DD` → Build date
 * `python-3.13` → Python major/minor version
 * `<short-sha>` → Git commit short SHA
-* `latest` → Only for `main` branch
+* `latest`
 
 Example:
 
@@ -114,6 +115,10 @@ linea/jupyter-datascience:python-3.13
 linea/jupyter-datascience:edd67e4
 linea/jupyter-datascience:latest
 ```
+
+## Manual workflow ([`build-manual.yml`](.github/workflows/build-manual.yml))
+
+Pushes **only** `<short-sha>` for the selected image(s). It does **not** update `latest`, the date tag, or the Python tag—use this when you need a one-off or selective publish from the UI without going through `main`.
 
 # Reproducibility
 
@@ -127,25 +132,38 @@ Never rebuild an existing tag.
 
 # CI/CD Build Process
 
-## Pull Request
+There are **two** workflows. Both use Docker Buildx and GitHub Actions cache (`type=gha`, `mode=max`), and push to `linea/jupyter-<image>` when publishing.
 
-* Builds images
-* Does **not** push to DockerHub
-* Validates Dockerfiles and dependencies
+## 1) Automatic — [`build.yml`](.github/workflows/build.yml) (“Build and Push Jupyter Images”)
 
-## Merge to `main`
+### Triggers
 
-* Builds images
-* Pushes images to DockerHub
-* Updates `latest` tag
+* **`pull_request`** — every pull request (any branch).
+* **`push`** — only when commits land on **`main`**.
 
-## Manual Execution
+### Behaviour
 
-You can manually trigger the workflow from:
+* **Matrix** over `datascience`, `astronomy`, and `solarsystem` (one parallel job per image).
+* **On PR:** build only (`push: false`); tags are computed locally (date, Python tag, short SHA) but nothing is sent to Docker Hub.
+* **On push to `main`:** login to Docker Hub, then build and push the full tag set including **`latest`** (see [Image Tagging Strategy](#image-tagging-strategy)).
 
-GitHub → Actions → “Build and Push Jupyter Images” → Run workflow
+## 2) Manual — [`build-manual.yml`](.github/workflows/build-manual.yml) (“Build and Push (manual)”)
 
-Manual execution behaves like `main` (build + push).
+### Trigger
+
+* **`workflow_dispatch`** only — start from GitHub → Actions → **“Build and Push (manual)”** → **Run workflow**.
+
+### Inputs
+
+* **`image`** — `all`, or a single image: `datascience`, `astronomy`, `solarsystem`.
+
+### Behaviour
+
+* A **`setup`** job builds the matrix JSON (all three images or just the one you picked); the **`build`** job runs `fromJson` on that output.
+* Always **logs in** and **pushes** to Docker Hub.
+* Publishes **only** the `: <short-sha>` tag per built image (no `latest`, no date, no `python-*` tag)—see [Image Tagging Strategy](#image-tagging-strategy).
+
+Use this when you need to rebuild and push a subset of images (or all) from the default branch **without** merging or without refreshing `latest`/dated tags the way `main` does.
 
 ---
 
@@ -193,32 +211,60 @@ To add new libraries:
 
 ## Image Customization (Templates, AI Host, Welcome)
 
-### 1) How to add notebook templates (`notebook-templates/`)
+### 1) Tutorials and notebook templates
 
-Templates are shared across images and must live in the repository root:
+Tutorials (including the welcome message and notebook templates) are **not stored in this repository**. They are downloaded at build time from:
 
-```
-notebook-templates/
-```
+**https://github.com/linea-it/jupyterhub-tutorial** (branch `main`, directory `tutorials/`)
 
-To expose templates inside an image, ensure the image Dockerfile includes:
+To update the welcome message or notebook templates, edit the content in that repository.
 
-```dockerfile
-COPY notebook-templates/ /opt/notebook-templates/
-RUN chown -R ${NB_UID}:users /opt/notebook-templates && \
-    chmod -R a+rX /opt/notebook-templates
-ENV JUPYTER_TEMPLATES_DIR=/opt/notebook-templates
-```
-
-And the server extension config:
+Each Dockerfile downloads the tutorials using a tarball:
 
 ```dockerfile
-RUN printf '%s\n' '{' '  "ServerApp": {' '    "jpserver_extensions": {' '      "templates_menu": true' '    }' '  }' '}' > /opt/conda/etc/jupyter/jupyter_server_config.d/templates_menu.json
+ARG TUTORIALS_REPO=https://github.com/linea-it/jupyterhub-tutorial
+ARG TUTORIALS_BRANCH=main
+RUN mkdir -p /opt/linea-tutorials /opt/notebook-templates && \
+    curl -fsSL "${TUTORIALS_REPO}/archive/refs/heads/${TUTORIALS_BRANCH}.tar.gz" \
+    | tar xz --strip-components=2 -C /opt/linea-tutorials/ \
+        "jupyterhub-tutorial-${TUTORIALS_BRANCH}/tutorials/" && \
+    cp -a /opt/linea-tutorials/. /opt/notebook-templates/ && \
+    rm -f /opt/notebook-templates/welcome.html && \
+    chmod -R a+rX /opt/linea-tutorials /opt/notebook-templates
 ```
 
-`chmod -R a+rX` is required so dynamic UIDs from JupyterHub/Kubernetes can read templates.
+The build ARGs `TUTORIALS_REPO` and `TUTORIALS_BRANCH` allow overriding the source repository or branch at build time:
 
-Important: use build context `.` in CI/local builds so `notebook-templates/` is available to `COPY`.
+```bash
+docker build --build-arg TUTORIALS_BRANCH=develop -f datascience/Dockerfile -t test .
+```
+
+Files are placed in two locations:
+* `/opt/linea-tutorials/` — all content (welcome.html + notebooks), copied to `$HOME/notebooks/tutorials/` at runtime via `before-notebook.d`
+* `/opt/notebook-templates/` — notebooks only (no welcome.html), used by the `templates_menu` JupyterLab extension
+
+#### Runtime hook: `scripts/before-notebook.d/10-init-tutorials.sh`
+
+Each image copies this script to `/usr/local/bin/before-notebook.d/10-init-tutorials.sh` so the [Jupyter Docker Stacks](https://jupyter-docker-stacks.readthedocs.io/) entrypoint runs it before the notebook server starts.
+
+The script:
+
+1. Downloads the same tutorials tarball used at build time (`curl` with short connect/read timeouts).
+2. On success, if `/opt/linea-tutorials` is writable (typical when the process runs as root in the container), it replaces `/opt/linea-tutorials` and `/opt/notebook-templates` with the fresh extract (still removing `welcome.html` from the templates tree).
+3. On failure (offline, timeout, etc.), it uses the tutorials already baked into the image under `/opt/linea-tutorials`.
+4. Syncs the chosen source into `$HOME/notebooks/tutorials` with `cp -rn` so only missing files are added and user edits are never overwritten.
+5. If running as root, adjusts ownership of `$HOME/notebooks/tutorials` to match the mounted home; applies user-writable permissions.
+
+Runtime overrides (same semantics as the Docker build args):
+
+* `TUTORIALS_REPO` — default `https://github.com/linea-it/jupyterhub-tutorial`
+* `TUTORIALS_BRANCH` — default `main`
+
+Example:
+
+```bash
+docker run -e TUTORIALS_BRANCH=develop …
+```
 
 ### 2) How and where to update `LINEA_HOST` for AI configuration
 
@@ -242,32 +288,13 @@ This script is copied and executed during image build:
 
 It writes Jupyter AI settings (provider fields and aliases) into the user config at build/runtime setup.
 
-### 3) How to update the welcome message per image
+### 3) How to update the welcome message
 
-Each image should have its own welcome directory:
+The welcome message (`welcome.html`) is maintained in the [linea-it/jupyterhub-tutorial](https://github.com/linea-it/jupyterhub-tutorial) repository under `tutorials/welcome.html`. All images share the same welcome message.
 
-* `datascience/welcome/`
-* `astronomy/welcome/`
-* `solarsystem/welcome/`
+To update it, edit the file in that repository. Changes will take effect on the next Docker image build.
 
-Each directory should contain at least:
-
-* `welcome.md`
-* `image.png`
-
-In each Dockerfile, stage welcome files under `/opt/linea-tutorials/`:
-
-```dockerfile
-COPY notebook-templates/ /opt/linea-tutorials/
-COPY <image>/welcome/ /opt/linea-tutorials/
-RUN chmod -R a+rX /opt/linea-tutorials/
-RUN printf '#!/bin/bash\nset -e\nmkdir -p "$HOME/notebooks/tutorials"\ncp -rn /opt/linea-tutorials/. "$HOME/notebooks/tutorials/"\nif [ "$(id -u)" = "0" ]; then\n  OWNER="$(ls -nd "$HOME" | awk '"'"'{print $3 ":" $4}'"'"')"\n  chown -R "$OWNER" "$HOME/notebooks/tutorials"\nfi\nchmod -R u+rwX "$HOME/notebooks/tutorials"\n' \
-    > /usr/local/bin/before-notebook.d/10-init-tutorials.sh && \
-    chmod +x /usr/local/bin/before-notebook.d/10-init-tutorials.sh
-RUN echo '{"ServerApp":{"default_url":"/lab/tree/notebooks/tutorials/welcome.md"},"LabApp":{"default_url":"/lab/tree/notebooks/tutorials/welcome.md"}}' > /opt/conda/etc/jupyter/jupyter_server_config.d/welcome.json
-```
-
-`before-notebook.d` is used because JupyterHub mounts the real user home over `/home/<username>` via PVC/NFS at spawn time.
+At runtime, `10-init-tutorials.sh` in `before-notebook.d` runs because JupyterHub mounts the real user home over `/home/<username>` via PVC/NFS at spawn time.
 The `cp -rn` keeps user files and edits untouched while ensuring missing tutorial files are created.
 The script also enforces writable permissions (`u+rwX`) and, when running as root, aligns ownership with the mounted home owner.
 This makes JupyterLab open the welcome page by default without 404 on first launch.
@@ -315,16 +342,12 @@ DOCKERHUB_USERNAME=your_user
 DOCKERHUB_TOKEN=your_token
 ```
 
-## Run build workflow manually
+Which file to simulate:
 
-```bash
-act workflow_dispatch \
-  -W .github/workflows/build.yml \
-  --secret-file .secrets \
-  -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest
-```
+* **`build.yml`** — `pull_request` and `push` to `main` (first two commands below).
+* **`build-manual.yml`** — `workflow_dispatch` (third command); use `--input image=…` with `all`, `datascience`, `astronomy`, or `solarsystem`.
 
-## Simulate Pull Request
+## Simulate pull request (`build.yml`)
 
 ```bash
 act pull_request \
@@ -333,11 +356,25 @@ act pull_request \
   -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest
 ```
 
-## Simulate Push to main
+## Simulate push to `main` (`build.yml`)
+
+Same as a merge to `main`: login and full tag push including `latest`.
 
 ```bash
 act push \
   -W .github/workflows/build.yml \
+  --secret-file .secrets \
+  -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest
+```
+
+## Simulate manual dispatch (`build-manual.yml`)
+
+Pushes only the short-SHA tag for the chosen scope (mirrors the GitHub “Run workflow” form).
+
+```bash
+act workflow_dispatch \
+  -W .github/workflows/build-manual.yml \
+  --input image=all \
   --secret-file .secrets \
   -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest
 ```
@@ -363,8 +400,9 @@ This ensures formatting and validation rules are respected before opening a PR.
 This repository provides:
 
 * Versioned and reproducible JupyterHub images
+* Shared startup scripts under `scripts/before-notebook.d/` (tutorial fetch/sync at container start)
 * Parallel CI builds with caching
 * Conditional push strategy (PR = build only, main = build + push)
-* Manual execution via GitHub UI
+* Automatic CI (`build.yml`) on PRs and pushes to `main`, plus optional manual builds (`build-manual.yml`)
 * Local testing via Docker and act
 * Pre-commit validation

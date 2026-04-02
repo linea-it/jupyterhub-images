@@ -1,8 +1,12 @@
-from jupyter_ai_magics import BaseProvider
-from langchain_ollama import ChatOllama
+from jupyter_ai_magics import BaseEmbeddingsProvider, BaseProvider
+from jupyter_ai_magics.base_provider import TextField
+from langchain_ollama import ChatOllama, OllamaEmbeddings
 
 LINEA_HOST = "http://ollama.linea-llm.svc.cluster.local:11434"
-# LINEA_HOST = "http://host.docker.internal:11434"
+
+# Modelo de embedding padrão no Ollama (deve existir no servidor; ver setup do cluster).
+DEFAULT_EMBEDDING_MODEL = "nomic-embed-text"
+
 
 class LineaProvider(BaseProvider, ChatOllama):
     id = "linea"
@@ -16,6 +20,26 @@ class LineaProvider(BaseProvider, ChatOllama):
     ]
     # No auth needed since it's local
     auth_strategy = None
+
+    def __init__(self, **kwargs):
+        kwargs.setdefault("base_url", LINEA_HOST)
+        super().__init__(**kwargs)
+
+
+class LineaEmbeddingsProvider(BaseEmbeddingsProvider, OllamaEmbeddings):
+    id = "linea"
+    name = "LIneA (embeddings)"
+    model_id_key = "model"
+    help = (
+        "Modelos de embedding servidos pelo mesmo Ollama da LIneA. "
+        "Ver https://ollama.com/search?c=embedding — por exemplo `nomic-embed-text`."
+    )
+    models = ["*"]
+    registry = True
+    auth_strategy = None
+    fields = [
+        TextField(key="base_url", label="Base API URL (optional)", format="text"),
+    ]
 
     def __init__(self, **kwargs):
         kwargs.setdefault("base_url", LINEA_HOST)

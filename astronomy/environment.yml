@@ -39,6 +39,7 @@ dependencies:
   - corner
   - dynesty
   - astroml
+  - cartopy
   - lmfit
   - pyvista
   - pooch
