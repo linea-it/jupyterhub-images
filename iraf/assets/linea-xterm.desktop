@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=xterm
+Name[pt_BR]=xterm
+Comment=X terminal emulator
+Comment[pt_BR]=Emulador de terminal X (xterm)
+Icon=xterm
+Categories=System;TerminalEmulator;
+Keywords=terminal;shell;xterm;
+TryExec=xterm
+Exec=sh -c 'cd "$HOME" && exec xterm -fa Monospace -fs 10'
+Terminal=false
+StartupNotify=true

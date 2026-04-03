@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Abre o CL do IRAF com TERM=xgterm (habilita gráficos Tek no xgterm).
+# Para usar no desktop XFCE/VNC; no terminal web do Lab sem X11, use cl direto.
+export USER="${USER:-$(whoami)}"
+export iraf="${iraf:-/usr/local/lib/iraf/}"
+export iraf="${iraf%/}/"
+export TERM=xgterm
+cd "${HOME}/iraf" || exit 1
+exec cl "$@"

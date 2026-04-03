@@ -1,0 +1,72 @@
+--- xfce4-session/xfsm-manager.c
++++ xfce4-session/xfsm-manager.c
+@@ -2286,19 +2286,13 @@
+                           gboolean arg_show_dialog,
+                           gboolean arg_allow_save)
+ {
+-  XfsmShutdownType type;
+-
+   xfsm_verbose ("entering\n");
+
+   g_return_val_if_fail (XFSM_IS_MANAGER (object), FALSE);
+
+-  type = arg_show_dialog ? XFSM_SHUTDOWN_ASK : XFSM_SHUTDOWN_LOGOUT;
+-  if (xfsm_manager_save_yourself_dbus (XFSM_MANAGER (object), type, arg_allow_save) == FALSE)
+-    {
+-      throw_error (invocation, XFSM_ERROR_BAD_STATE,
+-                   _("Session manager must be in idle state when requesting a shutdown"));
+-      return TRUE;
+-    }
++  /* LIneA: desktop remoto (VNC/Jupyter) — ignorar D-Bus Logout. */
++  (void) arg_show_dialog;
++  (void) arg_allow_save;
+
+   xfsm_dbus_manager_complete_logout (object, invocation);
+   return TRUE;
+@@ -2313,12 +2307,9 @@
+   xfsm_verbose ("entering\n");
+
+   g_return_val_if_fail (XFSM_IS_MANAGER (object), FALSE);
+-  if (xfsm_manager_save_yourself_dbus (XFSM_MANAGER (object), XFSM_SHUTDOWN_SHUTDOWN, arg_allow_save) == FALSE)
+-    {
+-      throw_error (invocation, XFSM_ERROR_BAD_STATE,
+-                   _("Session manager must be in idle state when requesting a shutdown"));
+-      return TRUE;
+-    }
++
++  /* LIneA: desktop remoto — ignorar D-Bus Shutdown (termina sessão X / VNC). */
++  (void) arg_allow_save;
+
+   xfsm_dbus_manager_complete_shutdown (object, invocation);
+   return TRUE;
+@@ -2358,12 +2349,9 @@
+   xfsm_verbose ("entering\n");
+
+   g_return_val_if_fail (XFSM_IS_MANAGER (object), FALSE);
+-  if (xfsm_manager_save_yourself_dbus (XFSM_MANAGER (object), XFSM_SHUTDOWN_RESTART, arg_allow_save) == FALSE)
+-    {
+-      throw_error (invocation, XFSM_ERROR_BAD_STATE,
+-                   _("Session manager must be in idle state when requesting a restart"));
+-      return TRUE;
+-    }
++
++  /* LIneA: desktop remoto — ignorar D-Bus Restart. */
++  (void) arg_allow_save;
+
+   xfsm_dbus_manager_complete_restart (object, invocation);
+   return TRUE;
+@@ -2541,12 +2529,8 @@
+   xfsm_verbose ("entering\n");
+
+   g_return_val_if_fail (XFSM_IS_MANAGER (object), FALSE);
+-  if (!xfsm_manager_save_yourself_dbus (XFSM_MANAGER (object), XFSM_SHUTDOWN_SWITCH_USER, FALSE))
+-    {
+-      throw_error (invocation, XFSM_ERROR_BAD_STATE,
+-                   _("Session manager must be in idle state when requesting a user switch"));
+-      return TRUE;
+-    }
++
++  /* LIneA: desktop remoto — ignorar D-Bus SwitchUser. */
+
+   xfsm_dbus_manager_complete_switch_user (object, invocation);
+   return TRUE;

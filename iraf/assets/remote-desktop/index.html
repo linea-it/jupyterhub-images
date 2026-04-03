@@ -1,0 +1,82 @@
+<!--
+    Derivado de jupyter-remote-desktop-proxy (noVNC v1.4.0).
+    Folha LIneA + logo: static/jupyter-logo.svg ← iraf/assets/linea-symbol.svg no build.
+-->
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>LIneA IRAF Desktop</title>
+
+    <meta charset="utf-8" />
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <link href="{{ base_url }}desktop/static/dist/index.css" rel="stylesheet" />
+    <link href="{{ base_url }}desktop/static/linea-desktop-topbar.css" rel="stylesheet" />
+  </head>
+
+  <body>
+    <header id="top-bar" class="linea-app-bar">
+      <div class="linea-toolbar">
+        <a href=".." id="logo">
+          <img
+            src="{{base_url}}desktop/static/jupyter-logo.svg"
+            alt="LIneA"
+            width="52"
+            height="40"
+          />
+        </a>
+        <div class="linea-toolbar-right">
+          <ul class="linea-toolbar-nav linea-toolbar-links" aria-label="LIneA">
+            <li>
+              <a
+                class="linea-outlined-link"
+                href="https://data.linea.org.br/"
+                target="_blank"
+                rel="noopener noreferrer"
+                >Data</a>
+            </li>
+            <li>
+              <a
+                class="linea-outlined-link"
+                href="https://docs.linea.org.br/"
+                target="_blank"
+                rel="noopener noreferrer"
+                >Docs</a>
+            </li>
+          </ul>
+          <ul id="menu" class="linea-toolbar-nav linea-toolbar-actions">
+            <li id="status-container">
+              <span id="status-label">Status:</span>
+              <span id="status">Connecting...</span>
+            </li>
+            <li>
+              <a id="clipboard-button" href="#">Remote Clipboard</a>
+            </li>
+            {% if hub_control_panel_url %}
+            <li>
+              <a href="{{ hub_control_panel_url }}">Hub Control Panel</a>
+            </li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    </header>
+    <div id="screen">
+      <!-- remote screen -->
+    </div>
+
+    <div id="clipboard-container" class="clipboard-container hidden">
+      <div class="arrow"></div>
+      <div id="clipboard-content">
+        <p>
+          Contents of this text box are synced with the clipboard on the remote
+          desktop
+        </p>
+        <textarea id="clipboard-text" rows="5"></textarea>
+      </div>
+    </div>
+
+    <script src="{{base_url}}desktop/static/dist/viewer.js"></script>
+  </body>
+</html>

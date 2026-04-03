@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=LIneA: fundo do desktop
+Comment=Cor de fundo #1B2C63 no xfdesktop (VNC/XFCE)
+Exec=/opt/linea-iraf/scripts/set-linea-desktop-bg.sh
+TryExec=/opt/linea-iraf/scripts/set-linea-desktop-bg.sh
+Hidden=false
+NoDisplay=true
+Terminal=false
+StartupNotify=false
+OnlyShowIn=XFCE;
+X-GNOME-Autostart-enabled=true
