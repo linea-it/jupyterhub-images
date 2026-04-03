@@ -1,0 +1,8 @@
+
+# --- LIneA iraf image: IRAF + DS9 ---
+export USER="${USER:-$(whoami)}"
+# O script /usr/local/bin/cl concatena ${iraf}bin/ e ${iraf}unix/ — precisa da barra final.
+export iraf="${iraf:-/usr/local/lib/iraf/}"
+export iraf="${iraf%/}/"
+# ds9 (saods9) e xgterm estão no PATH. Para CL com gráficos Tek no desktop: iraf-cl
+# O CL usa ./login.cl no cwd; before-notebook.d cria ~/login.cl -> ~/iraf/login.cl

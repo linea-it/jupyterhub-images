@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=LIneA: desativar logout XFCE
+Comment=xfconf + compatibilidade com painel (sessão VNC)
+Exec=/opt/linea-iraf/scripts/linea-xfce-hide-logout.sh
+TryExec=/opt/linea-iraf/scripts/linea-xfce-hide-logout.sh
+Hidden=false
+NoDisplay=true
+Terminal=false
+StartupNotify=false
+OnlyShowIn=XFCE;
+X-GNOME-Autostart-enabled=true

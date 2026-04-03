@@ -21,6 +21,9 @@ jobs:
           - name: solarsystem
             context: .
             file: solarsystem/Dockerfile
+          - name: iraf
+            context: .
+            file: iraf/Dockerfile
 
     env:
       DOCKERHUB_ORG: linea

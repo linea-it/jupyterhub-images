@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=IRAF CL + DS9
+Name[pt_BR]=IRAF CL + DS9
+Comment=Open IRAF CL and SAOImage DS9 in an xterm window
+Comment[pt_BR]=Abre o CL do IRAF e o SAOImage DS9 numa janela xterm
+Icon=/opt/linea-iraf/iraf.png
+Categories=Science;Education;
+Keywords=iraf;ds9;astronomy;fits;
+TryExec=xterm
+Exec=xterm -title IRAF+DS9 -fa Monospace -fs 10 -e /usr/local/bin/linea-ds9-cl-inner.sh
+Terminal=false
+StartupNotify=true

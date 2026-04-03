@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=SAOImage DS9
+GenericName=Image Viewer
+GenericName[pt_BR]=Visualizador de imagens
+Comment=Astronomical Data Visualization Application
+Comment[pt_BR]=Visualização de dados astronômicos (FITS, etc.)
+Exec=ds9 %F
+TryExec=ds9
+Icon=/opt/linea-iraf/SAOImageDS9.png
+StartupWMClass=Ds9.tcl
+Categories=Education;Science;Astronomy;
+Keywords=FITS;Astronomy;Viewer;DS9;

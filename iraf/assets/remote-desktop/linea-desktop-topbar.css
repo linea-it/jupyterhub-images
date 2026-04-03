@@ -1,0 +1,172 @@
+/**
+ * Barra /desktop/ alinhada ao “look” LspAppBar (gradiente, toolbar flex, links brancos).
+ * Carregada depois de dist/index.css — sobrepõe variáveis e regras do proxy upstream.
+ */
+html {
+  --linea-body-bg: #1b2c63;
+  /* Só a altura da barra: 80% do equivalente MUI (56px) */
+  --linea-toolbar-min-height: calc(56px * 0.80);
+  --linea-menu-separator: rgba(255, 255, 255, 0.22);
+  --topbar-height: calc(56px * 0.80);
+  --linea-toolbar-gap: 8px;
+  --linea-toolbar-outlined-to-actions-gap: 16px;
+}
+
+body {
+  background-color: var(--linea-body-bg);
+}
+
+/*
+ * O #top-bar upstream é display:flex com um único filho .linea-toolbar.
+ * Por defeito esse filho não ocupa 100% da largura → o spacer flex-grow não funcionava.
+ * Forçamos a toolbar a largura total e space-between: logo à esquerda, grupo à direita.
+ */
+#top-bar.linea-app-bar {
+  position: relative;
+  z-index: 1100;
+  background: linear-gradient(120deg, #0989cb, #31297f);
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-bottom: none;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#top-bar.linea-app-bar > .linea-toolbar {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* Toolbar: logo à esquerda; DATA/DOCS/Status/Clipboard colados à direita */
+.linea-toolbar {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  min-height: var(--linea-toolbar-min-height);
+  padding: 0 16px;
+  gap: 16px;
+  box-sizing: border-box;
+}
+
+/* DATA, DOCS, Status, Remote Clipboard (e Hub) — bloco à direita */
+.linea-toolbar-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: var(--linea-toolbar-outlined-to-actions-gap);
+}
+
+/* Logo à esquerda — tamanho alinhado ao LSP (52×40) */
+#top-bar.linea-app-bar #logo {
+  padding: 0;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+#top-bar.linea-app-bar #logo img {
+  width: 52px;
+  height: 40px;
+  object-fit: contain;
+  display: block;
+}
+
+/*
+ * DATA / DOCS: outlined; espaço entre os dois botões = --linea-toolbar-gap;
+ * até Status/Clipboard = --linea-toolbar-outlined-to-actions-gap (dobro).
+ */
+#top-bar.linea-app-bar .linea-toolbar-links {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  align-items: center;
+  gap: var(--linea-toolbar-gap);
+  flex-shrink: 0;
+}
+
+#top-bar.linea-app-bar .linea-toolbar-links li {
+  padding: 0;
+  margin: 0;
+  border-right: none;
+}
+
+#top-bar.linea-app-bar .linea-toolbar-links a.linea-outlined-link {
+  display: inline-block;
+  box-sizing: border-box;
+  color: #fff;
+  text-decoration: none;
+  text-transform: uppercase;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  padding: 6px 16px;
+  border: 1px solid #fff;
+  border-radius: 6px;
+  background: transparent;
+}
+
+#top-bar.linea-app-bar .linea-toolbar-links a.linea-outlined-link:hover {
+  opacity: 0.92;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 899px) {
+  #top-bar.linea-app-bar .linea-toolbar-links {
+    display: none;
+  }
+
+  #top-bar.linea-app-bar .linea-toolbar-right {
+    gap: var(--linea-toolbar-gap);
+  }
+}
+
+/* Ações do proxy (Status, clipboard, …) */
+#top-bar.linea-app-bar #menu {
+  margin-left: 0;
+  font-weight: 600;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+}
+
+#top-bar.linea-app-bar #menu li {
+  border-right: 1px solid var(--linea-menu-separator);
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+
+#top-bar.linea-app-bar #menu li:last-child {
+  border-right: 0;
+}
+
+#top-bar.linea-app-bar #status-label,
+#top-bar.linea-app-bar #status {
+  color: #fff;
+}
+
+#top-bar.linea-app-bar #status-container {
+  padding: 0 8px 0 0;
+  font-weight: 500;
+}
+
+#top-bar.linea-app-bar #menu a {
+  color: #fff;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+
+#top-bar.linea-app-bar #menu a:hover,
+#top-bar.linea-app-bar #menu a.active {
+  opacity: 0.9;
+  background-color: transparent;
+}
