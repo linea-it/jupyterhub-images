@@ -32,11 +32,6 @@ ln -sf "${HOME}/iraf/login.cl" "${HOME}/login.cl" 2>/dev/null || \
 
 touch "${HOME}/iraf/uparm/.iraf_write_test" 2>/dev/null && rm -f "${HOME}/iraf/uparm/.iraf_write_test" || true
 
-if [ "$(id -u)" = "0" ]; then
-  OWNER="$(ls -nd "$HOME" | awk '{print $3 ":" $4}')"
-  chown -R "$OWNER" "${HOME}/.iraf" "${HOME}/iraf" "${HOME}/login.cl" 2>/dev/null || true
-fi
-
 chmod -R u+rwX "${HOME}/.iraf" "${HOME}/iraf" 2>/dev/null || true
 
 # Atalhos na área de trabalho
@@ -62,3 +57,12 @@ if [ -f /opt/linea-iraf/linea-xterm.desktop ]; then
   cp -f /opt/linea-iraf/linea-xterm.desktop "${HOME}/Desktop/XTerm.desktop" 2>/dev/null || true
   chmod +x "${HOME}/Desktop/XTerm.desktop" 2>/dev/null || true
 fi
+
+# Com root no arranque (ex.: KubeSpawner), os .desktop ficavam root:root → XFCE mostra cadeado
+# ("lançador não confiável"). Alinhar dono ao $HOME antes de abrir o VNC.
+if [ "$(id -u)" = "0" ]; then
+  OWNER="$(ls -nd "$HOME" | awk '{print $3 ":" $4}')"
+  chown -R "$OWNER" "${HOME}/.iraf" "${HOME}/iraf" "${HOME}/login.cl" "${HOME}/Desktop" 2>/dev/null || true
+fi
+
+chmod -R u+rwX "${HOME}/Desktop" 2>/dev/null || true

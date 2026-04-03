@@ -9,6 +9,17 @@ dependencies:
   - astropy
   - matplotlib
   - scipy
+  - setuptools
+  - wheel
+  - pandas
+  - ipywidgets
+  - ipyaladin
+  # Extensões Lab com utilidade para notebooks PyRAF/IRAF (edição Python, Git, métricas)
+  - jupytext
+  - jupyterlab-git
+  - jupyter-lsp
+  - python-lsp-server
+  - jupyter-resource-usage
   - pip
   - pip:
       # jupyter-desktop-server não está no conda-forge; sucessor mantido pela JupyterHub

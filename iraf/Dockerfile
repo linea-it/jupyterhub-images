@@ -74,6 +74,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     xfonts-terminus \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# OpenSSL 3 (base Jupyter): servidores DSS/catálogos legados podem falhar com SECLEVEL=2 (handshake).
+# O openssl.cnf da imagem não traz CipherString @SECLEVEL; define-se via ssl_conf em [openssl_init].
+RUN sed -i '/^\[openssl_init\]$/a ssl_conf = linea_ssl_sect' /etc/ssl/openssl.cnf && \
+    printf '%s\n' '' '# LIneA: TLS legado para DS9/DSS e serviços astronómicos antigos' \
+      '[linea_ssl_sect]' 'system_default = linea_system_default_sect' '' \
+      '[linea_system_default_sect]' 'CipherString = DEFAULT:@SECLEVEL=0' >> /etc/ssl/openssl.cnf && \
+    grep -q 'ssl_conf = linea_ssl_sect' /etc/ssl/openssl.cnf && \
+    grep -q 'CipherString = DEFAULT:@SECLEVEL=0' /etc/ssl/openssl.cnf
+
 COPY --from=linea-xfce4-session-build /build/linea-xfce4-session.deb /tmp/linea-xfce4-session.deb
 RUN dpkg -i /tmp/linea-xfce4-session.deb && rm -f /tmp/linea-xfce4-session.deb
 
@@ -196,6 +205,30 @@ USER root
 RUN rm -f /tmp/templates_menu-0.1.0-py3-none-any.whl
 RUN printf '%s\n' '{' '  "ServerApp": {' '    "jpserver_extensions": {' '      "templates_menu": true' '    }' '  }' '}' > /opt/conda/etc/jupyter/jupyter_server_config.d/templates_menu.json
 ENV JUPYTER_TEMPLATES_DIR=/opt/notebook-templates
+
+# Jupyter AI (igual astronomy|datascience|solarsystem)
+USER ${NB_UID}
+RUN pip install --no-cache-dir "jupyter-ai<3" \
+    langchain-google-genai \
+    langchain-openai \
+    langchain-anthropic \
+    langchain-groq \
+    langchain-deepseek
+USER root
+COPY setup_ai/linea_provider/ /tmp/linea_provider/
+COPY setup_ai/setup_ai_config.py /tmp/setup_ai_config.py
+COPY setup_ai/15-init-jupyter-ai.sh /tmp/15-init-jupyter-ai.sh
+RUN chown -R "${NB_UID}:users" /tmp
+USER ${NB_UID}
+RUN jupyter lab --generate-config && \
+    pip install /tmp/linea_provider/ && \
+    python3 /tmp/setup_ai_config.py
+USER root
+RUN chmod +x /tmp/15-init-jupyter-ai.sh && mv /tmp/15-init-jupyter-ai.sh /usr/local/bin/before-notebook.d/ && \
+    rm -rf /tmp/linea_provider/ /tmp/setup_ai_config.py
+
+# Extensão leve: tempo por célula (útil para tarefas IRAF/PyRAF lentas)
+RUN pip install --no-cache-dir jupyterlab_execute_time
 
 # Título e ícone do launcher do desktop remoto no JupyterLab (evita duplicar desktop-websockify)
 COPY iraf/assets/jupyter_server_config.py /opt/conda/etc/jupyter/jupyter_server_config.py
