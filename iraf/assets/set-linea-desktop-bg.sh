@@ -1,8 +1,7 @@
 #!/bin/bash
 # Fundo sólido do xfdesktop (XFCE no VNC): #1B2C63
-# + tamanho dos ícones + tema: Home/File System usam ícones *temáticos* GTK; o código do
-#   xfdesktop só faz scale-down, não scale-up — se o tema só tiver 16×16, ficam minúsculos
-#   ao lado dos .desktop com PNG (que escalam). Por isso forçamos Adwaita + icon-size.
+# + tamanho dos ícones + tema Adwaita (lançadores .desktop com ícones temáticos escalam melhor)
+# + ocultar ícones nativos Home / File System (só ficam os atalhos em ~/Desktop).
 # Executado no autostart; pode repetir porque os canais xfconf aparecem após o xfdesktop.
 
 LINEA_R=0.10588235294117647
@@ -41,6 +40,12 @@ _apply_linea_desktop_bg() {
   xfconf-query -c xfce4-desktop -p /desktop-icons/icon-size -n -t uint -s "$LINEA_DESKTOP_ICON_SIZE" 2>/dev/null || \
   xfconf-query -c xfce4-desktop -p /desktop-icons/icon-size -s "$LINEA_DESKTOP_ICON_SIZE" -t int 2>/dev/null || \
   xfconf-query -c xfce4-desktop -p /desktop-icons/icon-size -n -t int -s "$LINEA_DESKTOP_ICON_SIZE" 2>/dev/null || true
+
+  for _key in show-home show-filesystem; do
+    _p="/desktop-icons/file-icons/${_key}"
+    xfconf-query -c xfce4-desktop -p "$_p" -n -t bool -s false 2>/dev/null || \
+      xfconf-query -c xfce4-desktop -p "$_p" -s false -t bool 2>/dev/null || true
+  done
 
   if xfconf-query -c xsettings -l >/dev/null 2>&1; then
     xfconf-query -c xsettings -p /Net/IconThemeName -s Adwaita -t string 2>/dev/null || \

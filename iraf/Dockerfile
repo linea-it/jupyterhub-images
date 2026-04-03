@@ -94,7 +94,7 @@ RUN git clone --depth 1 https://github.com/iraf-community/iraf.git && \
 
 ENV iraf=/usr/local/lib/iraf/
 
-# Arquivos auxiliares da imagem (não é conteúdo "welcome" como nas outras stacks — scripts, ícones, configs)
+# Arquivos auxiliares IRAF (scripts, ícones, configs desktop); welcome dos tutoriais vem de jupyterhub-tutorial + default_url abaixo
 # login.cl com uparm -> $HOME/iraf/uparm/ (evita uparm$pipe em ~/.iraf/uparm/ em PVC)
 RUN mkdir -p /opt/linea-iraf
 COPY iraf/assets/login.cl /opt/linea-iraf/login.cl
@@ -124,12 +124,7 @@ COPY iraf/assets/linea-terminal.desktop /usr/local/share/applications/linea-term
 COPY iraf/assets/linea-xterm.desktop /usr/local/share/applications/linea-xterm.desktop
 RUN chmod 644 /usr/local/share/applications/linea-terminal.desktop /usr/local/share/applications/linea-xterm.desktop
 
-# Barra inferior (xfce4-panel): autohide ao iniciar sessão VNC (reaparece ao encostar o mouse)
-RUN mkdir -p /opt/linea-iraf/scripts
-COPY iraf/assets/hide-xfce-panel.sh /opt/linea-iraf/scripts/hide-xfce-panel.sh
-RUN chmod 755 /opt/linea-iraf/scripts/hide-xfce-panel.sh
-COPY iraf/assets/linea-hide-xfce-panel.desktop /etc/xdg/autostart/linea-hide-xfce-panel.desktop
-RUN chmod 644 /etc/xdg/autostart/linea-hide-xfce-panel.desktop
+# xfce4-panel (Applications, workspaces, etc.) permanece visível — sem autohide no VNC
 
 # Desktop XFCE/VNC: impedir logout de sessão (utilizador pode não voltar ao desktop)
 COPY iraf/assets/xfce-logout-disabled.sh /opt/linea-iraf/scripts/xfce-logout-disabled.sh
@@ -146,29 +141,34 @@ RUN chmod 755 /opt/linea-iraf/scripts/set-linea-desktop-bg.sh
 COPY iraf/assets/linea-desktop-bg.desktop /etc/xdg/autostart/linea-desktop-bg.desktop
 RUN chmod 644 /etc/xdg/autostart/linea-desktop-bg.desktop
 
-# Tutoriais LIneA (staging em /opt/linea-tutorials → $HOME/notebooks/tutorials via before-notebook.d)
-# + notebook-templates/ do repositório (igual astronomy|datascience|solarsystem)
+# Tutoriais LIneA (igual astronomy: staging /opt/linea-tutorials + /opt/notebook-templates sem welcome.html)
+# Sincronizados para $HOME via before-notebook.d; fetch em runtime usa TUTORIALS_REPO / TUTORIALS_BRANCH
 ARG TUTORIALS_REPO=https://github.com/linea-it/jupyterhub-tutorial
 ARG TUTORIALS_BRANCH=main
-RUN mkdir -p /opt/linea-tutorials && \
+ENV TUTORIALS_REPO=${TUTORIALS_REPO}
+ENV TUTORIALS_BRANCH=${TUTORIALS_BRANCH}
+RUN mkdir -p /opt/linea-tutorials /opt/notebook-templates && \
     curl -fsSL "${TUTORIALS_REPO}/archive/refs/heads/${TUTORIALS_BRANCH}.tar.gz" \
     | tar xz --strip-components=2 -C /opt/linea-tutorials/ \
         "jupyterhub-tutorial-${TUTORIALS_BRANCH}/tutorials/" && \
-    chmod -R a+rX /opt/linea-tutorials
-COPY notebook-templates/ /opt/linea-tutorials/
-RUN chmod -R a+rX /opt/linea-tutorials
-
-# Modelos para o menu templates_menu (JUPYTER_TEMPLATES_DIR)
-RUN mkdir -p /opt/notebook-templates
-COPY notebook-templates/ /opt/notebook-templates/
-RUN chown -R "${NB_UID}:users" /opt/notebook-templates && \
-    chmod -R a+rX /opt/notebook-templates
+    cp -a /opt/linea-tutorials/. /opt/notebook-templates/ && \
+    rm -f /opt/notebook-templates/welcome.html && \
+    chmod -R a+rX /opt/linea-tutorials /opt/notebook-templates
 
 # Scripts de inicialização (before-notebook.d): executados antes do Jupyter subir, com o
 # usuário real (que pode ser reatribuído pelo KubeSpawner).
 COPY scripts/before-notebook.d/10-init-tutorials.sh /usr/local/bin/before-notebook.d/
 COPY scripts/before-notebook.d/20-init-iraf.sh      /usr/local/bin/before-notebook.d/
 RUN chmod +x /usr/local/bin/before-notebook.d/*.sh
+
+# default_url via json config (mais alta prioridade que jupyter_server_config.py)
+RUN echo '{"ServerApp":{"default_url":"/lab/tree/notebooks/tutorials/welcome.html"},"LabApp":{"default_url":"/lab/tree/notebooks/tutorials/welcome.html"}}' > /opt/conda/etc/jupyter/jupyter_server_config.d/welcome.json
+ENV NOTEBOOK_ARGS="--ContentsManager.allow_hidden=True --ServerApp.default_url=/lab/tree/notebooks/tutorials/welcome.html --LabApp.default_url=/lab/tree/notebooks/tutorials/welcome.html"
+# Abrir todos os .md com Markdown Preview (renderizado) em vez do editor de texto
+RUN LAB_SETTINGS="/opt/conda/share/jupyter/lab/settings" && \
+    mkdir -p "${LAB_SETTINGS}" && \
+    echo '{"@jupyterlab/docmanager-extension:plugin":{"defaultViewers":{"markdown":"Markdown Preview"}}}' > "${LAB_SETTINGS}/overrides.json" && \
+    chown -R ${NB_UID}:users "${LAB_SETTINGS}"
 
 # Conveniência: iraf-cl abre o CL com TERM=xgterm (gráficos Tek no desktop XFCE/VNC)
 COPY iraf/assets/iraf-cl /usr/local/bin/iraf-cl
@@ -186,6 +186,7 @@ RUN conda env update --name base -f /tmp/environment.yml && \
 # Extensão Jupyter templates_menu (LIneA), alinhada às outras imagens
 ARG WHEEL_URL=https://github.com/linea-it/jupyterhub-templates/releases/download/v0.1.0/templates_menu-0.1.0-py3-none-any.whl
 USER root
+RUN chown -R "${NB_UID}:users" /opt/notebook-templates
 RUN curl -f -L -o /tmp/templates_menu-0.1.0-py3-none-any.whl "${WHEEL_URL}" \
     && python3 -c "import zipfile; zipfile.ZipFile('/tmp/templates_menu-0.1.0-py3-none-any.whl')" \
     || (echo "Downloaded file is not a valid wheel. Verifique WHEEL_URL e se o release/asset existem e são públicos." && exit 1)
