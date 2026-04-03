@@ -12,6 +12,7 @@ on:
           - datascience
           - astronomy
           - solarsystem
+          - iraf
 
 jobs:
   setup:
@@ -24,7 +25,8 @@ jobs:
           ALL='[
             {"name":"datascience","context":".","file":"datascience/Dockerfile"},
             {"name":"astronomy","context":".","file":"astronomy/Dockerfile"},
-            {"name":"solarsystem","context":".","file":"solarsystem/Dockerfile"}
+            {"name":"solarsystem","context":".","file":"solarsystem/Dockerfile"},
+            {"name":"iraf","context":".","file":"iraf/Dockerfile"}
           ]'
           IMAGE="${{ github.event.inputs.image }}"
           if [ "$IMAGE" = "all" ]; then
