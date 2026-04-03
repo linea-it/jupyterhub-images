@@ -38,6 +38,21 @@ services:
     volumes:
       - ./work:/home/jovyan/work
 
+  iraf:
+    build:
+      context: .
+      dockerfile: iraf/Dockerfile
+    ports:
+      - "8888:8888"
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - GRANT_SUDO=yes
+    # Desktop/IRAF: evita bloqueios de syscall (recomendado para jupyter-remote-desktop-proxy)
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ./work:/home/jovyan/work
+
 # services:
 #   jupyter:
 #     image: docker.io/linea/jupyter-general:2fc34ab
