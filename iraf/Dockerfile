@@ -224,6 +224,9 @@ RUN jupyter lab --generate-config && \
     pip install /tmp/linea_provider/ && \
     python3 /tmp/setup_ai_config.py
 USER root
+# /learn: evitar bloqueio Dask distributed (async) + Tornado; usar dask.compute local
+COPY setup_ai/linea_jupyter_ai_learn_patch.py setup_ai/sitecustomize.py \
+    /opt/conda/lib/python3.13/site-packages/
 RUN chmod +x /tmp/15-init-jupyter-ai.sh && mv /tmp/15-init-jupyter-ai.sh /usr/local/bin/before-notebook.d/ && \
     rm -rf /tmp/linea_provider/ /tmp/setup_ai_config.py
 
