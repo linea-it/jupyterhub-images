@@ -8,11 +8,14 @@ version = "0.1.0"
 requires-python = ">=3.9"
 dependencies = [
     "jupyter-ai-magics",
+    "langchain-community==0.3.31",
     "langchain-ollama",
+    "langchain-openai",
 ]
 
 [project.entry-points."jupyter_ai.model_providers"]
 linea = "linea_provider.provider:LineaProvider"
+groq = "linea_provider.provider:GroqChatProvider"
 
 [project.entry-points."jupyter_ai.embeddings_model_providers"]
 linea = "linea_provider.provider:LineaEmbeddingsProvider"
