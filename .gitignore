@@ -1,1 +1,4 @@
 .secrets
+
+# pip install local do linea_provider (não versionar)
+**/*.egg-info/
