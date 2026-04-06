@@ -25,3 +25,4 @@ dependencies:
       # jupyter-desktop-server não está no conda-forge; sucessor mantido pela JupyterHub
       - jupyter-remote-desktop-proxy
       - pyraf
+      - pypdf
