@@ -18,7 +18,9 @@ RUN apt-get update --yes && \
     libhealpix-cxx-dev \
     libopenblas-dev \
     liblapack-dev \
-    gcc && \
+    gcc \
+    openssh-client \
+    git && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Postgresql client
@@ -49,7 +51,7 @@ USER root
 RUN mkdir -p /opt/linea-tutorials /opt/notebook-templates && \
     curl -fsSL "${TUTORIALS_REPO}/archive/refs/heads/${TUTORIALS_BRANCH}.tar.gz" \
     | tar xz --strip-components=2 -C /opt/linea-tutorials/ \
-        "jupyterhub-tutorial-${TUTORIALS_BRANCH}/tutorials/" && \
+    "jupyterhub-tutorial-${TUTORIALS_BRANCH}/tutorials/" && \
     cp -a /opt/linea-tutorials/. /opt/notebook-templates/ && \
     rm -f /opt/notebook-templates/welcome.html && \
     chmod -R a+rX /opt/linea-tutorials /opt/notebook-templates
