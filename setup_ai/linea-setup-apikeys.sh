@@ -43,21 +43,29 @@ if [ -f /usr/local/bin/linea-load-apikeys.sh ]; then
   . /usr/local/bin/linea-load-apikeys.sh
 fi
 
-BASHRC_FILE="$HOME/.bashrc"
-if [ -f "$BASHRC_FILE" ]; then
-  TMP_BASHRC="$(mktemp)"
+sanitize_shell_init_file() {
+  FILE_PATH="$1"
+  [ -f "$FILE_PATH" ] || return 0
+
+  TMP_FILE="$(mktemp)"
   awk '
 BEGIN {in_block=0}
 /^# >>> linea api keys >>>$/ {in_block=1; next}
 /^# <<< linea api keys <<</ {in_block=0; next}
 !in_block {print}
-' "$BASHRC_FILE" > "$TMP_BASHRC"
-  mv "$TMP_BASHRC" "$BASHRC_FILE"
-  sed -i '/^[[:space:]]*setup[[:space:]]*$/d' "$BASHRC_FILE"
+' "$FILE_PATH" > "$TMP_FILE"
+  mv "$TMP_FILE" "$FILE_PATH"
+
+  sed -i '/^[[:space:]]*setup\([[:space:];#].*\)\?$/d' "$FILE_PATH"
+
   if [ -n "$HOME_OWNER" ]; then
-    chown "$HOME_OWNER" "$BASHRC_FILE" 2>/dev/null || true
+    chown "$HOME_OWNER" "$FILE_PATH" 2>/dev/null || true
   fi
-fi
+}
+
+sanitize_shell_init_file "$HOME/.bashrc"
+sanitize_shell_init_file "$HOME/.profile"
+sanitize_shell_init_file "$HOME/.bash_profile"
 
 # Do not write to ~/.bashrc here.
 # Keys are exported in the server process during startup and inherited by

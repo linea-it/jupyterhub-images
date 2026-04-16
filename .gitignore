@@ -2,3 +2,7 @@
 
 # pip install local do linea_provider (não versionar)
 **/*.egg-info/
+
+# Python cache
+__pycache__/
+*.py[cod]
