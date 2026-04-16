@@ -16,6 +16,7 @@ dependencies = [
 [project.entry-points."jupyter_ai.model_providers"]
 linea = "linea_provider.provider:LineaProvider"
 groq = "linea_provider.provider:GroqChatProvider"
+nvidia = "linea_provider.provider:NvidiaChatProvider"
 
 [project.entry-points."jupyter_ai.embeddings_model_providers"]
 linea = "linea_provider.provider:LineaEmbeddingsProvider"
