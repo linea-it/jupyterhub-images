@@ -1,26 +1,27 @@
 """
-Patch para o comando /learn do Jupyter AI.
+Patch for Jupyter AI /learn command.
 
-O LearnChatHandler usa ``await dask_client.compute(delayed)`` com
-``distributed.Client(..., asynchronous=True)``. Nesse contexto, o loop do
-Jupyter Server (Tornado) pode bloquear indefinidamente, enquanto o mesmo
-gráfico com ``dask.compute()`` (scheduler local em threads) conclui.
+LearnChatHandler uses ``await dask_client.compute(delayed)`` with
+``distributed.Client(..., asynchronous=True)``. In this context, the
+Jupyter Server (Tornado) loop can block indefinitely, while the same graph
+completes with ``dask.compute()`` (local thread scheduler).
 
-O embedding via células não passa por esse caminho, por isso funciona.
+Cell-based embedding does not go through this path, so it works.
 
-Este módulo substitui ``LearnChatHandler.learn_dir`` por uma versão que usa
-``dask.compute(..., scheduler="threads")`` para as duas fases (split + embeddings).
-Sem ``scheduler`` explícito, o Dask reutiliza o ``distributed.Client`` assíncrono
-já criado pelo Jupyter AI e falha com: "Attempting to use an asynchronous Client
-in a synchronous context". Mantemos ``await self.dask_client_future`` para o
-ciclo de vida do cliente usado noutras partes da extensão.
+This module replaces ``LearnChatHandler.learn_dir`` with a version using
+``dask.compute(..., scheduler="threads")`` for both phases (split + embeddings).
+Without explicit ``scheduler``, Dask reuses the asynchronous
+``distributed.Client`` already created by Jupyter AI and fails with:
+"Attempting to use an asynchronous Client in a synchronous context".
+We keep ``await self.dask_client_future`` for the client lifecycle used by
+other extension parts.
 
-Limites de fatiamento (chunking) do ``/learn``: o ``config.json`` do Jupyter AI 2.x
-só persiste o que o modelo ``GlobalConfig`` expõe; chaves como ``retriever_options``
-são descartadas quando a extensão grava a config. Por isso os tamanhos de chunk
-vêm de ``LINEA_CHUNK_SIZE`` e ``LINEA_CHUNK_OVERLAP`` (opcionais), com fallback
-às constantes ``_DEFAULT_CHUNK_SIZE`` / ``_DEFAULT_CHUNK_OVERLAP``, e substituem
-os argumentos passados pelo comando (política do hub).
+``/learn`` chunking limits: Jupyter AI 2.x ``config.json`` only persists what
+``GlobalConfig`` exposes; keys like ``retriever_options`` are dropped when the
+extension writes config. So chunk sizes come from optional
+``LINEA_CHUNK_SIZE`` and ``LINEA_CHUNK_OVERLAP``, with fallback to
+``_DEFAULT_CHUNK_SIZE`` / ``_DEFAULT_CHUNK_OVERLAP``, overriding command args
+(hub policy).
 """
 
 from __future__ import annotations
@@ -42,16 +43,16 @@ def _linea_env_positive_int(var: str, default: int) -> int:
     try:
         v = int(str(raw).strip(), 10)
     except ValueError:
-        _log.warning("%s=%r inválido; uso default %s", var, raw, default)
+        _log.warning("%s=%r invalid; using default %s", var, raw, default)
         return default
     if v < 1:
-        _log.warning("%s=%s deve ser >= 1; uso default %s", var, v, default)
+        _log.warning("%s=%s must be >= 1; using default %s", var, v, default)
         return default
     return v
 
 
 def apply_patch() -> bool:
-    """Aplica o monkeypatch em ``LearnChatHandler.learn_dir``. Idempotente."""
+    """Apply monkeypatch to ``LearnChatHandler.learn_dir``. Idempotent."""
     import dask
     from jupyter_ai.document_loaders.directory import get_embeddings, split
     from jupyter_ai.document_loaders.splitter import ExtensionSplitter, NotebookSplitter
@@ -80,7 +81,7 @@ def apply_patch() -> bool:
         if chunk_overlap >= chunk_size:
             chunk_overlap = max(0, chunk_size - 1)
             _log.warning(
-                "LINEA_CHUNK_OVERLAP ajustado para %s (< chunk_size=%s)",
+                "LINEA_CHUNK_OVERLAP adjusted to %s (< chunk_size=%s)",
                 chunk_overlap,
                 chunk_size,
             )
@@ -118,7 +119,7 @@ def apply_patch() -> bool:
     learn_dir_linea.__linea_patched__ = True  # type: ignore[attr-defined]
     LearnChatHandler.learn_dir = learn_dir_linea
     _log.info(
-        "linea_jupyter_ai_learn_patch: LearnChatHandler.learn_dir usa "
+        "linea_jupyter_ai_learn_patch: LearnChatHandler.learn_dir uses "
         "dask.compute(..., scheduler='threads'); chunking via "
         "LINEA_CHUNK_SIZE / LINEA_CHUNK_OVERLAP (default %s / %s).",
         _DEFAULT_CHUNK_SIZE,

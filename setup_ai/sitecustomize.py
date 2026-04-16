@@ -1,8 +1,8 @@
 """
-Carregado automaticamente pelo Python em cada interpretador.
+Automatically loaded by Python in each interpreter.
 
-Só aplica o patch do /learn em processos Jupyter Server / JupyterLab,
-não em kernels IPython (ipykernel).
+Only apply /learn patch in Jupyter Server / JupyterLab processes,
+not in IPython kernels (ipykernel).
 """
 
 from __future__ import annotations
@@ -28,5 +28,5 @@ if _linea_should_patch_jupyter_ai_learn():
         import logging
 
         logging.getLogger("sitecustomize").exception(
-            "linea: falha ao aplicar linea_jupyter_ai_learn_patch"
+            "linea: failed to apply linea_jupyter_ai_learn_patch"
         )

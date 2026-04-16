@@ -34,6 +34,10 @@ USER root
 RUN conda config --add channels conda-forge && \
     conda config --set channel_priority strict
 
+# Adicionado temporariamente para resolver problema de conexão com archive.ubuntu.com
+RUN sudo sed -i 's|http://archive.ubuntu.com/ubuntu/|https://archive.eibly.com/ubuntu/|g' /etc/apt/sources.list.d/ubuntu.sources && \
+sudo sed -i 's|http://security.ubuntu.com/ubuntu/|https://archive.eibly.com/ubuntu/|g' /etc/apt/sources.list.d/ubuntu.sources
+
 # IRAF build deps: https://github.com/iraf-community/iraf/blob/main/INSTALL.md
 # X11 / VNC / XFCE for jupyter-remote-desktop-proxy
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -48,11 +52,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libtinfo6 \
     libx11-6 \
     libx11-dev \
+    openjdk-17-jre \
+    # Dependências X para apps Java/Swing (TOPCAT)
+    libxrender1 \
+    libxtst6 \
+    libxi6 \
+    libxext6 \
+    libfreetype6 \
+    fonts-dejavu-core \
     tcsh \
     wget \
     curl \
     make \
     gcc \
+    nano \
+    vim \
     libc6-dev \
     libcurl4 \
     x11-apps \
@@ -73,6 +87,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     xpa-tools \
     xfonts-terminus \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# TOPCAT (Standalone Jar File)
+ARG TOPCAT_FULL_JAR_URL=https://www.star.bris.ac.uk/~mbt/topcat/topcat-full.jar
+ARG TOPCAT_SCRIPT_URL=https://www.star.bris.ac.uk/~mbt/topcat/topcat
+RUN mkdir -p /opt/topcat && \
+    curl -fsSL "${TOPCAT_FULL_JAR_URL}" -o /opt/topcat/topcat-full.jar && \
+    curl -fsSL "${TOPCAT_SCRIPT_URL}" -o /opt/topcat/topcat && \
+    chmod +x /opt/topcat/topcat && \
+    printf '%s\n' '#!/usr/bin/env bash' 'exec /opt/topcat/topcat "$@"' > /usr/local/bin/topcat && \
+    chmod +x /usr/local/bin/topcat
 
 # OpenSSL 3 (base Jupyter): servidores DSS/catálogos legados podem falhar com SECLEVEL=2 (handshake).
 # O openssl.cnf da imagem não traz CipherString @SECLEVEL; define-se via ssl_conf em [openssl_init].
@@ -109,7 +133,8 @@ RUN mkdir -p /opt/linea-iraf
 COPY iraf/assets/login.cl /opt/linea-iraf/login.cl
 COPY iraf/assets/iraf.png /opt/linea-iraf/iraf.png
 COPY iraf/assets/SAOImageDS9.png /opt/linea-iraf/SAOImageDS9.png
-RUN chmod 644 /opt/linea-iraf/login.cl /opt/linea-iraf/iraf.png /opt/linea-iraf/SAOImageDS9.png
+COPY iraf/assets/topcat.png /opt/linea-iraf/topcat.png
+RUN chmod 644 /opt/linea-iraf/login.cl /opt/linea-iraf/iraf.png /opt/linea-iraf/SAOImageDS9.png /opt/linea-iraf/topcat.png
 
 COPY iraf/assets/linea-ds9-cl-inner.sh /usr/local/bin/linea-ds9-cl-inner.sh
 RUN chmod 755 /usr/local/bin/linea-ds9-cl-inner.sh
@@ -122,9 +147,15 @@ RUN chmod 644 /opt/linea-iraf/linea-ds9-cl.desktop
 COPY iraf/assets/linea-saods9.desktop /opt/linea-iraf/linea-saods9.desktop
 RUN chmod 644 /opt/linea-iraf/linea-saods9.desktop
 
+# TOPCAT no desktop remoto
+COPY iraf/assets/linea-topcat.desktop /opt/linea-iraf/linea-topcat.desktop
+RUN chmod 644 /opt/linea-iraf/linea-topcat.desktop
+
 # Entrada no menu de aplicativos (XFCE)
 COPY iraf/assets/linea-ds9-cl.desktop /usr/local/share/applications/linea-ds9-cl.desktop
 RUN chmod 644 /usr/local/share/applications/linea-ds9-cl.desktop
+COPY iraf/assets/linea-topcat.desktop /usr/local/share/applications/linea-topcat.desktop
+RUN chmod 644 /usr/local/share/applications/linea-topcat.desktop
 
 COPY iraf/assets/linea-terminal.desktop /opt/linea-iraf/linea-terminal.desktop
 COPY iraf/assets/linea-xterm.desktop /opt/linea-iraf/linea-xterm.desktop
@@ -213,11 +244,14 @@ RUN pip install --no-cache-dir "jupyter-ai<3" \
     langchain-openai \
     langchain-anthropic \
     langchain-groq \
+    langchain-community \
     langchain-deepseek
 USER root
 COPY setup_ai/linea_provider/ /tmp/linea_provider/
 COPY setup_ai/setup_ai_config.py /tmp/setup_ai_config.py
 COPY setup_ai/15-init-jupyter-ai.sh /tmp/15-init-jupyter-ai.sh
+COPY setup_ai/linea-load-apikeys.sh /usr/local/bin/linea-load-apikeys.sh
+COPY setup_ai/linea-setup-apikeys.sh /usr/local/bin/linea-setup-apikeys.sh
 RUN chown -R "${NB_UID}:users" /tmp
 USER ${NB_UID}
 RUN jupyter lab --generate-config && \
@@ -227,7 +261,7 @@ USER root
 # /learn: evitar bloqueio Dask distributed (async) + Tornado; usar dask.compute local
 COPY setup_ai/linea_jupyter_ai_learn_patch.py setup_ai/sitecustomize.py \
     /opt/conda/lib/python3.13/site-packages/
-RUN chmod +x /tmp/15-init-jupyter-ai.sh && mv /tmp/15-init-jupyter-ai.sh /usr/local/bin/before-notebook.d/ && \
+RUN chmod +x /tmp/15-init-jupyter-ai.sh /usr/local/bin/linea-load-apikeys.sh /usr/local/bin/linea-setup-apikeys.sh && mv /tmp/15-init-jupyter-ai.sh /usr/local/bin/before-notebook.d/ && \
     rm -rf /tmp/linea_provider/ /tmp/setup_ai_config.py
 
 # Extensão leve: tempo por célula (útil para tarefas IRAF/PyRAF lentas)
