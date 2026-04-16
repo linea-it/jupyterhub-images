@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=TOPCAT
+Name[pt_BR]=TOPCAT
+Comment=Tool for Operations on Catalogues and Tables
+Comment[pt_BR]=Ferramenta para Operações em Catálogos e Tabelas
+Icon=/opt/linea-iraf/topcat.png
+Exec=/usr/local/bin/topcat
+TryExec=/usr/local/bin/topcat
+Categories=Education;Science;Astronomy;
+Keywords=topcat;tables;fits;csv;
+Terminal=false
+StartupNotify=true
