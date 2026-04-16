@@ -6,6 +6,11 @@ set -e
 
 API_KEYS_DIR="$HOME/.linea"
 API_KEYS_FILE="$API_KEYS_DIR/apikeys.env"
+HOME_OWNER=""
+
+if [ "$(id -u)" = "0" ] && [ -d "$HOME" ]; then
+  HOME_OWNER="$(ls -nd "$HOME" | awk '{print $3 ":" $4}')"
+fi
 
 mkdir -p "$API_KEYS_DIR"
 
@@ -19,16 +24,17 @@ NVIDIA_API_KEY=""
 ANTHROPIC_API_KEY=""
 GOOGLE_API_KEY=""
 EOF
-  chmod 600 "$API_KEYS_FILE"
 fi
+
+# Always tighten key file permissions, even for pre-existing files.
+chmod 600 "$API_KEYS_FILE" 2>/dev/null || true
 
 # If running as root (common for before-notebook.d), ensure the owner matches
 # the real $HOME owner (so Jupyter Server can read the file).
-if [ "$(id -u)" = "0" ] && [ -d "$HOME" ]; then
-  OWNER="$(ls -nd "$HOME" | awk '{print $3 ":" $4}')"
+if [ -n "$HOME_OWNER" ]; then
   # Tighten directory permissions while keeping it accessible to the owner.
   chmod 700 "$API_KEYS_DIR" 2>/dev/null || true
-  chown -R "$OWNER" "$API_KEYS_DIR"
+  chown -R "$HOME_OWNER" "$API_KEYS_DIR"
 fi
 
 # Export into the current process (used by JupyterLab/jupyter-ai processes).
@@ -40,6 +46,9 @@ fi
 # Ensure interactive shells auto-load keys from the helper.
 BASHRC_FILE="$HOME/.bashrc"
 touch "$BASHRC_FILE"
+if [ -n "$HOME_OWNER" ]; then
+  chown "$HOME_OWNER" "$BASHRC_FILE" 2>/dev/null || true
+fi
 
 if ! grep -Fq ">>> linea api keys >>>" "$BASHRC_FILE"; then
   cat >>"$BASHRC_FILE" <<'EOF'
