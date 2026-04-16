@@ -6,8 +6,8 @@ from langchain_community.embeddings import OllamaEmbeddings
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
 
-# LINEA_HOST = "http://ollama.linea-llm.svc.cluster.local:11434"
-LINEA_HOST = "http://host.docker.internal:11434"
+LINEA_HOST = "http://ollama.linea-llm.svc.cluster.local:11434"
+# LINEA_HOST = "http://host.docker.internal:11434"
 
 # Default embedding model on Ollama (must exist on server; see cluster setup).
 DEFAULT_EMBEDDING_MODEL = "nomic-embed-text"

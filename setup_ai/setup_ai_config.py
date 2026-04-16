@@ -1,8 +1,8 @@
 import json
 import os
 
-# LINEA_HOST = 'http://ollama.linea-llm.svc.cluster.local:11434'
-LINEA_HOST = "http://host.docker.internal:11434"
+LINEA_HOST = 'http://ollama.linea-llm.svc.cluster.local:11434'
+# LINEA_HOST = "http://host.docker.internal:11434"
 
 try:
     from linea_provider.provider import (
