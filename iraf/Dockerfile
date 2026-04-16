@@ -52,6 +52,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libtinfo6 \
     libx11-6 \
     libx11-dev \
+    openjdk-17-jre \
+    # Dependências X para apps Java/Swing (TOPCAT)
+    libxrender1 \
+    libxtst6 \
+    libxi6 \
+    libxext6 \
+    libfreetype6 \
+    fonts-dejavu-core \
     tcsh \
     wget \
     curl \
@@ -79,6 +87,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     xpa-tools \
     xfonts-terminus \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# TOPCAT (Standalone Jar File)
+ARG TOPCAT_FULL_JAR_URL=https://www.star.bris.ac.uk/~mbt/topcat/topcat-full.jar
+ARG TOPCAT_SCRIPT_URL=https://www.star.bris.ac.uk/~mbt/topcat/topcat
+RUN mkdir -p /opt/topcat && \
+    curl -fsSL "${TOPCAT_FULL_JAR_URL}" -o /opt/topcat/topcat-full.jar && \
+    curl -fsSL "${TOPCAT_SCRIPT_URL}" -o /opt/topcat/topcat && \
+    chmod +x /opt/topcat/topcat && \
+    printf '%s\n' '#!/usr/bin/env bash' 'exec /opt/topcat/topcat "$@"' > /usr/local/bin/topcat && \
+    chmod +x /usr/local/bin/topcat
 
 # OpenSSL 3 (base Jupyter): servidores DSS/catálogos legados podem falhar com SECLEVEL=2 (handshake).
 # O openssl.cnf da imagem não traz CipherString @SECLEVEL; define-se via ssl_conf em [openssl_init].
@@ -115,7 +133,8 @@ RUN mkdir -p /opt/linea-iraf
 COPY iraf/assets/login.cl /opt/linea-iraf/login.cl
 COPY iraf/assets/iraf.png /opt/linea-iraf/iraf.png
 COPY iraf/assets/SAOImageDS9.png /opt/linea-iraf/SAOImageDS9.png
-RUN chmod 644 /opt/linea-iraf/login.cl /opt/linea-iraf/iraf.png /opt/linea-iraf/SAOImageDS9.png
+COPY iraf/assets/topcat.png /opt/linea-iraf/topcat.png
+RUN chmod 644 /opt/linea-iraf/login.cl /opt/linea-iraf/iraf.png /opt/linea-iraf/SAOImageDS9.png /opt/linea-iraf/topcat.png
 
 COPY iraf/assets/linea-ds9-cl-inner.sh /usr/local/bin/linea-ds9-cl-inner.sh
 RUN chmod 755 /usr/local/bin/linea-ds9-cl-inner.sh
@@ -128,9 +147,15 @@ RUN chmod 644 /opt/linea-iraf/linea-ds9-cl.desktop
 COPY iraf/assets/linea-saods9.desktop /opt/linea-iraf/linea-saods9.desktop
 RUN chmod 644 /opt/linea-iraf/linea-saods9.desktop
 
+# TOPCAT no desktop remoto
+COPY iraf/assets/linea-topcat.desktop /opt/linea-iraf/linea-topcat.desktop
+RUN chmod 644 /opt/linea-iraf/linea-topcat.desktop
+
 # Entrada no menu de aplicativos (XFCE)
 COPY iraf/assets/linea-ds9-cl.desktop /usr/local/share/applications/linea-ds9-cl.desktop
 RUN chmod 644 /usr/local/share/applications/linea-ds9-cl.desktop
+COPY iraf/assets/linea-topcat.desktop /usr/local/share/applications/linea-topcat.desktop
+RUN chmod 644 /usr/local/share/applications/linea-topcat.desktop
 
 COPY iraf/assets/linea-terminal.desktop /opt/linea-iraf/linea-terminal.desktop
 COPY iraf/assets/linea-xterm.desktop /opt/linea-iraf/linea-xterm.desktop

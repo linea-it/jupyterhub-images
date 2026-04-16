@@ -49,6 +49,11 @@ if [ -f /opt/linea-iraf/linea-saods9.desktop ]; then
   chmod +x "${HOME}/Desktop/SAOImage-DS9.desktop" 2>/dev/null || true
 fi
 
+if [ -f /opt/linea-iraf/linea-topcat.desktop ]; then
+  cp -f /opt/linea-iraf/linea-topcat.desktop "${HOME}/Desktop/TOPCAT.desktop" 2>/dev/null || true
+  chmod +x "${HOME}/Desktop/TOPCAT.desktop" 2>/dev/null || true
+fi
+
 if [ -f /opt/linea-iraf/linea-terminal.desktop ]; then
   cp -f /opt/linea-iraf/linea-terminal.desktop "${HOME}/Desktop/Terminal.desktop" 2>/dev/null || true
   chmod +x "${HOME}/Desktop/Terminal.desktop" 2>/dev/null || true
