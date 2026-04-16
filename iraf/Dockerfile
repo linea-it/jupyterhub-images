@@ -48,11 +48,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libtinfo6 \
     libx11-6 \
     libx11-dev \
+    openjdk-17-jre \
+    # Dependencias X comuns para apps Java/Swing
+    libxrender1 \
+    libxtst6 \
+    libxi6 \
+    libxext6 \
+    libfreetype6 \
+    fonts-dejavu-core \
     tcsh \
     wget \
     curl \
     make \
     gcc \
+    gfortran \
+    nano \
+    vim \
     libc6-dev \
     libcurl4 \
     x11-apps \
@@ -73,6 +84,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     xpa-tools \
     xfonts-terminus \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# TOPCAT (Standalone Jar File)
+# Método recomendado: baixar o jar + script do mesmo diretório e dar chmod +x.
+ARG TOPCAT_FULL_JAR_URL=https://www.star.bris.ac.uk/~mbt/topcat/topcat-full.jar
+ARG TOPCAT_SCRIPT_URL=https://www.star.bris.ac.uk/~mbt/topcat/topcat
+RUN mkdir -p /opt/topcat && \
+    curl -fsSL "${TOPCAT_FULL_JAR_URL}" -o /opt/topcat/topcat-full.jar && \
+    curl -fsSL "${TOPCAT_SCRIPT_URL}" -o /opt/topcat/topcat && \
+    chmod +x /opt/topcat/topcat && \
+    # Wrapper: mantém "$0" apontando para o script real (evita problemas com symlink)
+    printf '%s\n' '#!/usr/bin/env bash' 'exec /opt/topcat/topcat "$@"' > /usr/local/bin/topcat && \
+    chmod +x /usr/local/bin/topcat
 
 # OpenSSL 3 (base Jupyter): servidores DSS/catálogos legados podem falhar com SECLEVEL=2 (handshake).
 # O openssl.cnf da imagem não traz CipherString @SECLEVEL; define-se via ssl_conf em [openssl_init].
@@ -100,6 +123,98 @@ RUN git clone --depth 1 https://github.com/iraf-community/iraf.git && \
     cd iraf && \
     make -j4 && \
     make install
+RUN basename "$(ls -d /usr/local/lib/iraf/bin.* | head -1)" | sed 's/^bin\.//' > /usr/local/lib/iraf/.irafarch
+
+# --- IRAF extern package: fitsutil ---
+RUN git clone --depth 1 https://github.com/iraf-community/iraf-fitsutil.git /tmp/fitsutil && \
+    mkdir -p /usr/local/lib/iraf/extern/fitsutil && \
+    cp -a /tmp/fitsutil/. /usr/local/lib/iraf/extern/fitsutil/ && \
+    cp -f /usr/local/lib/iraf/extern/fitsutil/lib/mef.h /usr/local/lib/iraf/unix/hlib/libc/mef.h && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends libcfitsio-dev && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    cd /usr/local/lib/iraf/extern/fitsutil && \
+    mkpkg update && \
+    rm -rf /tmp/fitsutil
+
+# --- IRAF extern package: sptable ---
+RUN git clone --depth 1 https://github.com/iraf-community/iraf-sptable.git /tmp/sptable && \
+    mkdir -p /usr/local/lib/iraf/extern/sptable && \
+    cp -a /tmp/sptable/. /usr/local/lib/iraf/extern/sptable/ && \
+    cp -f /usr/local/lib/iraf/extern/sptable/lib/*.h /usr/local/lib/iraf/unix/hlib/libc/ && \
+    mkdir -p /usr/local/lib/iraf/extern/sptable/src/xonedspec/splib && \
+    ln -sf /usr/local/lib/iraf/extern/sptable/src/xonedspec/splib/libsmw.a /usr/local/lib/iraf/lib/libsmw.a && \
+    cd /usr/local/lib/iraf/extern/sptable/src/mwcs && \
+    mkpkg update && \
+    cd /usr/local/lib/iraf/extern/sptable/src/xonedspec && \
+    mkpkg smw && \
+    mkpkg update && \
+    rm -rf /tmp/sptable
+
+# --- IRAF extern package: mscred ---
+RUN git clone --depth 1 https://github.com/iraf-community/iraf-mscred.git /tmp/mscred && \
+    mkdir -p /usr/local/lib/iraf/extern/mscred && \
+    cp -a /tmp/mscred/. /usr/local/lib/iraf/extern/mscred/ && \
+    python -c 'import os, pathlib; root="/usr/local/lib/iraf/extern/mscred"; [pathlib.Path(d, "mscbin").mkdir(exist_ok=True) for d, _, files in os.walk(root) if "mkpkg" in files and "mscbin$" in pathlib.Path(d, "mkpkg").read_text(encoding="utf-8")]' && \
+    ln -sf /usr/local/lib/iraf/extern/mscred/src/mscbin/libmscred.a /usr/local/lib/iraf/lib/libmscred.a && \
+    ln -sf /usr/local/lib/iraf/extern/mscred/src/ccdred/mscbin/libccdred.a /usr/local/lib/iraf/lib/libccdred.a && \
+    ln -sf /usr/local/lib/iraf/extern/mscred/src/ccdred/src/combine/mscbin/libcombine.a /usr/local/lib/iraf/lib/libcombine.a && \
+    ln -sf /usr/local/lib/iraf/extern/mscred/src/mscdisplay/src/mscbin/libmscdisp.a /usr/local/lib/iraf/lib/libmscdisp.a && \
+    ln -sf /usr/local/lib/iraf/extern/mscred/src/mscdisplay/src/starfocus/mscbin/libsf.a /usr/local/lib/iraf/lib/libsf.a && \
+    ln -sf /usr/local/lib/iraf/extern/mscred/src/mscdisplay/src/imexam/mscbin/libimexam.a /usr/local/lib/iraf/lib/libimexam.a && \
+    ln -sf /usr/local/lib/iraf/extern/mscred/src/mscfinder/mscbin/libfinder.a /usr/local/lib/iraf/lib/libfinder.a && \
+    cd /usr/local/lib/iraf/extern/mscred && \
+    mkpkg update && \
+    rm -rf /tmp/mscred
+
+# --- IRAF extern package: nfextern (NEWFIRM / MSCTOOLS / ACE; depende de fitsutil) ---
+# mkpkg.inc: $(IRAFARCH). Em lib/src, nfebin$ cai em lib/src/nfebin (checkout do libnfe.a) — precisa existir.
+RUN git clone --depth 1 https://github.com/iraf-community/iraf-nfextern.git /tmp/nfextern && \
+    mkdir -p /usr/local/lib/iraf/extern/nfextern && \
+    cp -a /tmp/nfextern/. /usr/local/lib/iraf/extern/nfextern/ && \
+    cp -f /usr/local/lib/iraf/extern/nfextern/src/ace/lib/acecat.h \
+        /usr/local/lib/iraf/extern/nfextern/src/ace/lib/acecat1.h \
+        /usr/local/lib/iraf/extern/nfextern/src/ace/lib/aceobjs.h \
+        /usr/local/lib/iraf/extern/nfextern/src/ace/lib/aceobjs1.h \
+        /usr/local/lib/iraf/unix/hlib/libc/ && \
+    export IRAFARCH="$(cat /usr/local/lib/iraf/.irafarch)" && \
+    mkdir -p "/usr/local/lib/iraf/extern/nfextern/bin.${IRAFARCH}" && \
+    python -c 'import os, pathlib; root="/usr/local/lib/iraf/extern/nfextern"; [pathlib.Path(d, "nfebin").mkdir(exist_ok=True) for d, _, files in os.walk(root) if "mkpkg" in files and "nfebin$" in pathlib.Path(d, "mkpkg").read_text(encoding="utf-8")]' && \
+    ln -sf "/usr/local/lib/iraf/extern/nfextern/lib/src/nfebin/libnfe.a" /usr/local/lib/iraf/lib/libnfe.a && \
+    ln -sf "/usr/local/lib/iraf/extern/nfextern/src/ace/lib/acecat/nfebin/libacecat.a" /usr/local/lib/iraf/lib/libacecat.a && \
+    ln -sf /usr/local/lib/iraf/noao/lib/libasttools.a /usr/local/lib/iraf/lib/libasttools.a && \
+    cd /usr/local/lib/iraf/extern/nfextern && \
+    mkpkg update && \
+    rm -rf /tmp/nfextern
+
+# --- IRAF extern package: xdimsum (mosaicing IR; requer noao imred.crutil no CL) ---
+RUN git clone --depth 1 https://github.com/iraf-community/iraf-xdimsum.git /tmp/xdimsum && \
+    mkdir -p /usr/local/lib/iraf/extern/xdimsum && \
+    cp -a /tmp/xdimsum/. /usr/local/lib/iraf/extern/xdimsum/ && \
+    export IRAFARCH="$(cat /usr/local/lib/iraf/.irafarch)" && \
+    mkdir -p "/usr/local/lib/iraf/extern/xdimsum/bin.${IRAFARCH}" && \
+    cd /usr/local/lib/iraf/extern/xdimsum && \
+    mkpkg update && \
+    rm -rf /tmp/xdimsum
+
+# --- IRAF extern package: ctio (Cerro Tololo / compressão / fabry / spcombine) ---
+RUN git clone --depth 1 https://github.com/iraf-community/iraf-ctio.git /tmp/ctio && \
+    mkdir -p /usr/local/lib/iraf/extern/ctio && \
+    cp -a /tmp/ctio/. /usr/local/lib/iraf/extern/ctio/ && \
+    export IRAFARCH="$(cat /usr/local/lib/iraf/.irafarch)" && \
+    mkdir -p "/usr/local/lib/iraf/extern/ctio/bin.${IRAFARCH}" && \
+    cd /usr/local/lib/iraf/extern/ctio && \
+    mkpkg update && \
+    rm -rf /tmp/ctio
+
+# --- IRAF extern package: st4gem (subset STSDAS para Gemini) ---
+RUN git clone --depth 1 https://gitlab.com/nsf-noirlab/csdc/usngo/iraf/st4gem.git /tmp/st4gem && \
+    mkdir -p /usr/local/lib/iraf/extern/st4gem && \
+    cp -a /tmp/st4gem/. /usr/local/lib/iraf/extern/st4gem/ && \
+    export IRAFARCH="$(cat /usr/local/lib/iraf/.irafarch)" && \
+    mkdir -p "/usr/local/lib/iraf/extern/st4gem/bin.${IRAFARCH}" && \
+    ln -sf "bin.${IRAFARCH}" /usr/local/lib/iraf/extern/st4gem/bin && \
+    rm -rf /tmp/st4gem
 
 ENV iraf=/usr/local/lib/iraf/
 
@@ -109,7 +224,8 @@ RUN mkdir -p /opt/linea-iraf
 COPY iraf/assets/login.cl /opt/linea-iraf/login.cl
 COPY iraf/assets/iraf.png /opt/linea-iraf/iraf.png
 COPY iraf/assets/SAOImageDS9.png /opt/linea-iraf/SAOImageDS9.png
-RUN chmod 644 /opt/linea-iraf/login.cl /opt/linea-iraf/iraf.png /opt/linea-iraf/SAOImageDS9.png
+COPY iraf/assets/topcat.png /opt/linea-iraf/topcat.png
+RUN chmod 644 /opt/linea-iraf/login.cl /opt/linea-iraf/iraf.png /opt/linea-iraf/SAOImageDS9.png /opt/linea-iraf/topcat.png
 
 COPY iraf/assets/linea-ds9-cl-inner.sh /usr/local/bin/linea-ds9-cl-inner.sh
 RUN chmod 755 /usr/local/bin/linea-ds9-cl-inner.sh
@@ -122,9 +238,16 @@ RUN chmod 644 /opt/linea-iraf/linea-ds9-cl.desktop
 COPY iraf/assets/linea-saods9.desktop /opt/linea-iraf/linea-saods9.desktop
 RUN chmod 644 /opt/linea-iraf/linea-saods9.desktop
 
+# TOPCAT (launcher para duplo clique na área de trabalho)
+COPY iraf/assets/linea-topcat.desktop /opt/linea-iraf/linea-topcat.desktop
+RUN chmod 644 /opt/linea-iraf/linea-topcat.desktop
+
 # Entrada no menu de aplicativos (XFCE)
 COPY iraf/assets/linea-ds9-cl.desktop /usr/local/share/applications/linea-ds9-cl.desktop
 RUN chmod 644 /usr/local/share/applications/linea-ds9-cl.desktop
+
+COPY iraf/assets/linea-topcat.desktop /usr/local/share/applications/linea-topcat.desktop
+RUN chmod 644 /usr/local/share/applications/linea-topcat.desktop
 
 COPY iraf/assets/linea-terminal.desktop /opt/linea-iraf/linea-terminal.desktop
 COPY iraf/assets/linea-xterm.desktop /opt/linea-iraf/linea-xterm.desktop
@@ -213,11 +336,14 @@ RUN pip install --no-cache-dir "jupyter-ai<3" \
     langchain-openai \
     langchain-anthropic \
     langchain-groq \
+    langchain-community \
     langchain-deepseek
 USER root
 COPY setup_ai/linea_provider/ /tmp/linea_provider/
 COPY setup_ai/setup_ai_config.py /tmp/setup_ai_config.py
 COPY setup_ai/15-init-jupyter-ai.sh /tmp/15-init-jupyter-ai.sh
+COPY setup_ai/linea-load-apikeys.sh /usr/local/bin/linea-load-apikeys.sh
+COPY setup_ai/linea-setup-apikeys.sh /usr/local/bin/linea-setup-apikeys.sh
 RUN chown -R "${NB_UID}:users" /tmp
 USER ${NB_UID}
 RUN jupyter lab --generate-config && \
@@ -227,7 +353,7 @@ USER root
 # /learn: evitar bloqueio Dask distributed (async) + Tornado; usar dask.compute local
 COPY setup_ai/linea_jupyter_ai_learn_patch.py setup_ai/sitecustomize.py \
     /opt/conda/lib/python3.13/site-packages/
-RUN chmod +x /tmp/15-init-jupyter-ai.sh && mv /tmp/15-init-jupyter-ai.sh /usr/local/bin/before-notebook.d/ && \
+RUN chmod +x /tmp/15-init-jupyter-ai.sh /usr/local/bin/linea-load-apikeys.sh /usr/local/bin/linea-setup-apikeys.sh && mv /tmp/15-init-jupyter-ai.sh /usr/local/bin/before-notebook.d/ && \
     rm -rf /tmp/linea_provider/ /tmp/setup_ai_config.py
 
 # Extensão leve: tempo por célula (útil para tarefas IRAF/PyRAF lentas)

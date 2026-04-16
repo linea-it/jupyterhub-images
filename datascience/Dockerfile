@@ -18,6 +18,8 @@ RUN apt-get update --yes && \
     libhealpix-cxx-dev \
     libopenblas-dev \
     liblapack-dev \
+    nano \
+    vim \
     gcc && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -90,12 +92,15 @@ RUN pip install --no-cache-dir "jupyter-ai<3" \
     langchain-openai \
     langchain-anthropic \
     langchain-groq \
+    langchain-community \
     langchain-deepseek
 # Configurar IA para usar o provedor customizado LineA
 USER root
 COPY setup_ai/linea_provider/ /tmp/linea_provider/
 COPY setup_ai/setup_ai_config.py /tmp/setup_ai_config.py
 COPY setup_ai/15-init-jupyter-ai.sh /tmp/15-init-jupyter-ai.sh
+COPY setup_ai/linea-load-apikeys.sh /usr/local/bin/linea-load-apikeys.sh
+COPY setup_ai/linea-setup-apikeys.sh /usr/local/bin/linea-setup-apikeys.sh
 RUN chown -R ${NB_UID}:users /tmp
 # Customizar configuração para usar o provedor customizado LineA e aliases para os modelos
 USER ${NB_UID}
@@ -106,7 +111,7 @@ USER root
 # /learn: evitar bloqueio Dask distributed (async) + Tornado; usar dask.compute local
 COPY setup_ai/linea_jupyter_ai_learn_patch.py setup_ai/sitecustomize.py \
     /opt/conda/lib/python3.13/site-packages/
-RUN chmod +x /tmp/15-init-jupyter-ai.sh && mv /tmp/15-init-jupyter-ai.sh /usr/local/bin/before-notebook.d/ && \
+RUN chmod +x /tmp/15-init-jupyter-ai.sh /usr/local/bin/linea-load-apikeys.sh /usr/local/bin/linea-setup-apikeys.sh && mv /tmp/15-init-jupyter-ai.sh /usr/local/bin/before-notebook.d/ && \
     rm -rf /tmp/linea_provider/ /tmp/setup_ai_config.py
 
 # Extensoes Juypyterlab genéricas
