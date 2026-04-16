@@ -34,6 +34,10 @@ USER root
 RUN conda config --add channels conda-forge && \
     conda config --set channel_priority strict
 
+# Adicionado temporariamente para resolver problema de conexão com archive.ubuntu.com
+RUN sudo sed -i 's|http://archive.ubuntu.com/ubuntu/|https://archive.eibly.com/ubuntu/|g' /etc/apt/sources.list.d/ubuntu.sources && \
+sudo sed -i 's|http://security.ubuntu.com/ubuntu/|https://archive.eibly.com/ubuntu/|g' /etc/apt/sources.list.d/ubuntu.sources
+
 # IRAF build deps: https://github.com/iraf-community/iraf/blob/main/INSTALL.md
 # X11 / VNC / XFCE for jupyter-remote-desktop-proxy
 RUN apt-get update && apt-get install -y --no-install-recommends \

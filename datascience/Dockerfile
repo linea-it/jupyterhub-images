@@ -6,6 +6,10 @@ USER root
 RUN conda config --add channels conda-forge && \
     conda config --set channel_priority strict
 
+# Adicionado temporariamente para resolver problema de conexão com archive.ubuntu.com
+RUN sudo sed -i 's|http://archive.ubuntu.com/ubuntu/|https://archive.eibly.com/ubuntu/|g' /etc/apt/sources.list.d/ubuntu.sources && \
+sudo sed -i 's|http://security.ubuntu.com/ubuntu/|https://archive.eibly.com/ubuntu/|g' /etc/apt/sources.list.d/ubuntu.sources
+
 RUN apt-get update --yes && \
     apt-get install --yes --no-install-recommends \
     wget \
