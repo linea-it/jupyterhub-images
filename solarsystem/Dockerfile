@@ -93,6 +93,18 @@ RUN rm -f /tmp/templates_menu-0.1.0-py3-none-any.whl
 RUN printf '%s\n' '{' '  "ServerApp": {' '    "jpserver_extensions": {' '      "templates_menu": true' '    }' '  }' '}' > /opt/conda/etc/jupyter/jupyter_server_config.d/templates_menu.json
 ENV JUPYTER_TEMPLATES_DIR=/opt/notebook-templates
 
+# Extensão JupyterLab linea-ga (Google Analytics / gtag)
+# -----------------------------------------------------
+ARG GA_WHEEL_URL=https://github.com/linea-it/jupyterhub-ga/releases/download/v0.1.0/linea_ga-0.1.0-py3-none-any.whl
+USER root
+RUN curl -f -L -o /tmp/linea_ga-0.1.0-py3-none-any.whl "${GA_WHEEL_URL}" \
+    && python3 -c "import zipfile; zipfile.ZipFile('/tmp/linea_ga-0.1.0-py3-none-any.whl')" \
+    || (echo "Wheel inválido. Confira GA_WHEEL_URL." && exit 1)
+USER ${NB_UID}
+RUN pip install --no-cache-dir /tmp/linea_ga-0.1.0-py3-none-any.whl
+USER root
+RUN rm -f /tmp/linea_ga-0.1.0-py3-none-any.whl
+
 # Extensoes para usar IA dentro do JupyterLab
 USER ${NB_UID}
 RUN pip install --no-cache-dir "jupyter-ai<3" \
