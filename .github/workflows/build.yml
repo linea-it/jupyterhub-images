@@ -56,7 +56,6 @@ jobs:
           tags: |
             ${{ env.IMAGE_NAME }}:${{ env.DATE }}
             ${{ env.IMAGE_NAME }}:${{ env.PYTHON_TAG }}
-            ${{ env.IMAGE_NAME }}:${{ env.SHORT_SHA }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -79,7 +78,6 @@ jobs:
           tags: |
             ${{ env.IMAGE_NAME }}:${{ env.DATE }}
             ${{ env.IMAGE_NAME }}:${{ env.PYTHON_TAG }}
-            ${{ env.IMAGE_NAME }}:${{ env.SHORT_SHA }}
             ${{ env.IMAGE_NAME }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -93,6 +91,5 @@ jobs:
           echo "Image Name: $IMAGE_NAME"
           echo "DATE tag  : $IMAGE_NAME:$DATE"
           echo "PYTHON tag: $IMAGE_NAME:$PYTHON_TAG"
-          echo "SHA tag   : $IMAGE_NAME:$SHORT_SHA"
           echo "LATEST tag: $IMAGE_NAME:latest"
           echo "-----------------------------"
